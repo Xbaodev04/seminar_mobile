@@ -191,22 +191,62 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            await GeoAudioManager.instance.enterPoi(poi);
-                            await GeoAudioManager.instance.playContent(0);
-                          },
-                          icon: const Icon(Icons.play_arrow_rounded),
-                          label: const Text('Phát Thuyết Minh'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
+                        child: _isLoadingContent
+                            ? ElevatedButton.icon(
+                                onPressed: null,
+                                icon: const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.orange,
+                                  ),
+                                ),
+                                label: const Text('Đang tải bài nghe...'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              )
+                            : _contents.isNotEmpty
+                            ? ElevatedButton.icon(
+                                onPressed: () async {
+                                  await GeoAudioManager.instance.enterPoi(
+                                    poi,
+                                    initialContents: _contents,
+                                  );
+                                  await GeoAudioManager.instance.playContent(0);
+                                },
+                                icon: const Icon(Icons.play_arrow_rounded),
+                                label: const Text('Phát Thuyết Minh'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              )
+                            : ElevatedButton.icon(
+                                onPressed: null,
+                                icon: const Icon(Icons.music_off),
+                                label: const Text('Chưa có bài nghe'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
@@ -422,6 +462,11 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
     return ListenableBuilder(
       listenable: manager,
       builder: (context, _) {
+        if (manager.currentPoi?.id != widget.poi.id ||
+            manager.currentContents.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
         return Card(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),

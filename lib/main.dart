@@ -17,7 +17,7 @@ import 'presentation/pages/update_profile_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Catch Flutter framework errors
+  // Xử lý lỗi
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
   };

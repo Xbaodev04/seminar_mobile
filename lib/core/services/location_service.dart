@@ -5,9 +5,9 @@ class LocationService {
   LocationService._private();
   static final LocationService instance = LocationService._private();
 
-  /// Default fallback location (Ho Chi Minh City Center) if GPS is unavailable
-  static const double defaultLatitude = 10.7769;
-  static const double defaultLongitude = 106.7009;
+  /// Default fallback location (District 4, Ho Chi Minh City) if GPS is unavailable
+  static const double defaultLatitude = 10.7580;
+  static const double defaultLongitude = 106.7020;
 
   /// Check if GPS location service is enabled on the device
   Future<bool> isLocationServiceEnabled() async {

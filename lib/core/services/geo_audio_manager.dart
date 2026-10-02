@@ -42,7 +42,11 @@ class GeoAudioManager extends ChangeNotifier {
   List<Map<String, dynamic>> get currentContents => _currentContents;
   int get currentContentIndex => _currentContentIndex;
 
-  Future<void> enterPoi(Poi poi, {String? language}) async {
+  Future<void> enterPoi(
+    Poi poi, {
+    String? language,
+    List<Map<String, dynamic>>? initialContents,
+  }) async {
     _currentPoi = poi;
     _isPlaying = false;
     _userLanguage = language ?? 'vi';
@@ -50,7 +54,13 @@ class GeoAudioManager extends ChangeNotifier {
     _currentContentIndex = 0;
     _currentContentStartTime = null;
 
-    // Fetch stall contents with user language
+    if (initialContents != null && initialContents.isNotEmpty) {
+      _currentContents = initialContents;
+      notifyListeners();
+      return;
+    }
+
+    // Fetch stall contents with user language if not provided
     try {
       final accessToken = AuthService.instance.accessToken;
       if (accessToken == null || accessToken.isEmpty) {
