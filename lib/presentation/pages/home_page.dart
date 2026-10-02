@@ -6,12 +6,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../core/services/auth_service.dart';
+import '../../core/services/geo_audio_manager.dart';
 import '../../core/services/location_service.dart';
 import '../../data/local/mock_pois.dart';
 import '../../data/models/poi.dart';
 import '../../data/remote/poi_api.dart';
 import '../../features/map/map_controller.dart';
 import '../widgets/app_bottom_nav.dart';
+import '../widgets/mini_player_widget.dart';
 import '../widgets/poi_card_item.dart';
 import '../widgets/poi_quick_view_sheet.dart';
 import 'poi_detail_page.dart';
@@ -501,16 +503,30 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      bottomNavigationBar: AppBottomNav(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          if (index == 1) {
-            Navigator.pushNamed(context, '/profile');
-          }
-        },
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          MiniPlayerWidget(
+            onTap: () {
+              final poi = GeoAudioManager.instance.currentPoi;
+              if (poi != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => PoiDetailPage(poi: poi)),
+                );
+              }
+            },
+          ),
+          AppBottomNav(
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              setState(() => _currentIndex = index);
+              if (index == 1) {
+                Navigator.pushNamed(context, '/profile');
+              }
+            },
+          ),
+        ],
       ),
     );
   }

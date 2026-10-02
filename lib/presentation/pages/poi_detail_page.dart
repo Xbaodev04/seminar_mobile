@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../core/services/auth_service.dart';
+import '../../core/services/geo_audio_manager.dart';
 import '../../core/services/location_service.dart';
 import '../../data/models/poi.dart';
 import '../../data/remote/poi_api.dart';
@@ -191,14 +192,9 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Đang phát bài thuyết minh: ${poi.name}',
-                                ),
-                              ),
-                            );
+                          onPressed: () async {
+                            await GeoAudioManager.instance.enterPoi(poi);
+                            await GeoAudioManager.instance.playContent(0);
                           },
                           icon: const Icon(Icons.play_arrow_rounded),
                           label: const Text('Phát Thuyết Minh'),
@@ -235,6 +231,8 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  _buildFullAudioPlayer(context),
 
                   const SizedBox(height: 24),
                   const Divider(),
@@ -416,6 +414,124 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
         ],
       ),
     );
+  }
+
+  Widget _buildFullAudioPlayer(BuildContext context) {
+    final manager = GeoAudioManager.instance;
+
+    return ListenableBuilder(
+      listenable: manager,
+      builder: (context, _) {
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          color: Colors.orange.shade50,
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Text(
+                  manager.currentTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Slider tiến trình & Thời gian
+                StreamBuilder<Duration>(
+                  stream: manager.positionStream,
+                  builder: (context, snapshot) {
+                    final pos = snapshot.data ?? Duration.zero;
+                    final dur = manager.currentDuration ?? Duration.zero;
+                    final maxSec = dur.inSeconds > 0
+                        ? dur.inSeconds.toDouble()
+                        : 1.0;
+                    final currentSec = pos.inSeconds.toDouble().clamp(
+                      0.0,
+                      maxSec,
+                    );
+
+                    return Column(
+                      children: [
+                        Slider(
+                          value: currentSec,
+                          max: maxSec,
+                          activeColor: Colors.orange,
+                          onChanged: (val) {
+                            manager.seek(Duration(seconds: val.toInt()));
+                          },
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _formatDuration(pos),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Text(
+                                _formatDuration(dur),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+
+                // Bộ nút điều khiển: Tua lùi 10s, Play/Pause, Tua tới 10s
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.replay_10),
+                      iconSize: 32,
+                      onPressed: () => manager.seekBackward(seconds: 10),
+                    ),
+                    const SizedBox(width: 16),
+                    IconButton(
+                      icon: Icon(
+                        manager.isPlaying
+                            ? Icons.pause_circle_filled
+                            : Icons.play_circle_fill,
+                      ),
+                      iconSize: 56,
+                      color: Colors.orange,
+                      onPressed: () => manager.togglePlay(),
+                    ),
+                    const SizedBox(width: 16),
+                    IconButton(
+                      icon: const Icon(Icons.forward_10),
+                      iconSize: 32,
+                      onPressed: () => manager.seekForward(seconds: 10),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
   Widget _buildCoverPlaceholder() {

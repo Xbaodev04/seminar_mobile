@@ -77,7 +77,9 @@ class PoiApi {
             if (body['data'] is List) {
               return List<Map<String, dynamic>>.from(body['data'] as List);
             } else if (body['data'] is Map && body['data']['items'] is List) {
-              return List<Map<String, dynamic>>.from(body['data']['items'] as List);
+              return List<Map<String, dynamic>>.from(
+                body['data']['items'] as List,
+              );
             }
           } else if (body is List) {
             return List<Map<String, dynamic>>.from(body);
@@ -223,8 +225,19 @@ class PoiApi {
 
     try {
       final body = jsonDecode(raw);
-      if (body is Map && body['detail'] != null) {
-        return fixMojibake(body['detail'].toString());
+
+      // Update lại theo format Exception Handler  của Backend
+      if (body is Map) {
+        if (body['message'] != null && body['message'].toString().isNotEmpty) {
+          return fixMojibake(body['message'].toString());
+        }
+        if (body['error'] != null && body['error'].toString().isNotEmpty) {
+          return fixMojibake(body['error'].toString());
+        }
+        // Fallback lại detail lỡ như gọi nhầm endpoint ko qua handler
+        if (body['detail'] != null) {
+          return fixMojibake(body['detail'].toString());
+        }
       }
       return 'HTTP ${res.statusCode}: ${fixMojibake(raw)}';
     } catch (_) {

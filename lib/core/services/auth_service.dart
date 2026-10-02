@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:crypto/crypto.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:seminar_mobile/data/remote/api_client.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:seminar_mobile/core/services/online_status_service.dart';
+import 'package:seminar_mobile/data/remote/api_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProfile {
   final String id;
@@ -37,8 +38,7 @@ class AuthService extends ChangeNotifier {
   static const _kAccessTokenKey = 'auth_access_token';
   static const _kRefreshTokenKey = 'auth_refresh_token';
   static const _kDeviceIdKey = 'auth_device_id';
-  static const _kApiBaseUrl =
-      'http://10.0.2.2:8000';
+  static const _kApiBaseUrl = 'http://10.0.2.2:8000';
 
   UserProfile? _user;
   UserProfile? get user => _user;
@@ -398,7 +398,7 @@ class AuthService extends ChangeNotifier {
   Map<String, dynamic>? _me;
   Map<String, dynamic>? get me => _me;
 
-  Future<void> _fetchMeFromApi() async {
+  Future<void> fetchMeFromApi() async {
     final access = _prefs.getString(_kAccessTokenKey);
     if (access == null) return;
     try {
@@ -414,26 +414,38 @@ class AuthService extends ChangeNotifier {
 
   Future<void> signInWithGoogle() async {
     try {
+      debugPrint('[GoogleSignIn] Initializing with serverClientId...');
       await GoogleSignIn.instance.initialize(
         serverClientId:
-            '350012144118-96dcm1mdupduqkmbsbnil2f1d5lh6hub.apps.googleusercontent.com', // Replace with your server client ID
+            '272475900321-l35p89k13uognv3vepb079jggk296p10.apps.googleusercontent.com',
       );
+      debugPrint('[GoogleSignIn] Authenticating...');
       final acc = await GoogleSignIn.instance.authenticate();
-      if (acc == null) throw Exception('Quá trình đăng nhập Google bị huỷ');
+      debugPrint('[GoogleSignIn] Account authenticated: ${acc.email}');
 
-      // Get the authentication object to obtain ID token
       final auth = await acc.authentication;
       final idToken = auth.idToken;
+      debugPrint(
+        '[GoogleSignIn] ID Token: ${idToken != null ? "received (${idToken.length} chars)" : "null"}',
+      );
 
-      if (idToken == null) throw Exception('Không thể lấy Google ID token');
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception(
+          'Không thể lấy Google ID token. Vui lòng kiểm tra lại serverClientId',
+        );
+      }
 
       // Send to backend for authentication
+      debugPrint('[GoogleSignIn] Sending ID token to backend...');
       final res = await ApiClient.instance.googleLogin(idToken: idToken);
       final access = res['accessToken'] as String?;
       final refresh = res['refreshToken'] as String?;
 
-      if (access == null || refresh == null)
-        throw Exception('Google login failed: missing tokens');
+      if (access == null || refresh == null) {
+        throw Exception(
+          'Đăng nhập Google thất bại: Không nhận được token từ server',
+        );
+      }
 
       await _storeTokens(access, refresh);
       final me = await ApiClient.instance.me(access);
@@ -447,7 +459,10 @@ class AuthService extends ChangeNotifier {
         );
       }
       notifyListeners();
-    } catch (e) {
+      debugPrint('[GoogleSignIn] Google sign in SUCCESS!');
+    } catch (e, stack) {
+      debugPrint('[GoogleSignIn] ERROR: $e');
+      debugPrint('[GoogleSignIn] STACK: $stack');
       rethrow;
     }
   }

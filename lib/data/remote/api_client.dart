@@ -8,7 +8,7 @@ class ApiClient {
   /// Set this to your running API address. For Android emulator use 10.0.2.2
   String baseUrl = const String.fromEnvironment(
     'SEMINAR_API_BASE',
-    defaultValue: 'http://10.0.2.2:8000',
+    defaultValue: 'http://10.0.2.2:8000/api/v1',
   );
 
   Future<Map<String, dynamic>> login({
@@ -24,13 +24,13 @@ class ApiClient {
     int? toTimestamp,
     String? languageCode,
   }) => AuthApi.instance.listListeningHistory(
-        accessToken: accessToken,
-        page: page,
-        size: size,
-        fromTimestamp: fromTimestamp,
-        toTimestamp: toTimestamp,
-        languageCode: languageCode,
-      );
+    accessToken: accessToken,
+    page: page,
+    size: size,
+    fromTimestamp: fromTimestamp,
+    toTimestamp: toTimestamp,
+    languageCode: languageCode,
+  );
 
   Future<Map<String, dynamic>> addListeningHistory({
     required String accessToken,
@@ -39,12 +39,12 @@ class ApiClient {
     required int listenedAt,
     int? listenDuration,
   }) => AuthApi.instance.addListeningHistory(
-        accessToken: accessToken,
-        stallId: stallId,
-        stallContentId: stallContentId,
-        listenedAt: listenedAt,
-        listenDuration: listenDuration,
-      );
+    accessToken: accessToken,
+    stallId: stallId,
+    stallContentId: stallContentId,
+    listenedAt: listenedAt,
+    listenDuration: listenDuration,
+  );
 
   Future<Map<String, dynamic>> register({
     String? username,
@@ -81,10 +81,10 @@ class ApiClient {
     required String currentPassword,
     required String newPassword,
   }) => AuthApi.instance.changePassword(
-        accessToken: accessToken,
-        currentPassword: currentPassword,
-        newPassword: newPassword,
-      );
+    accessToken: accessToken,
+    currentPassword: currentPassword,
+    newPassword: newPassword,
+  );
 
   Future<Map<String, dynamic>> updateProfile({
     required String accessToken,
@@ -93,12 +93,12 @@ class ApiClient {
     String? phone,
     String? avatarUrl,
   }) => AuthApi.instance.updateProfile(
-        accessToken: accessToken,
-        fullName: fullName,
-        email: email,
-        phone: phone,
-        avatarUrl: avatarUrl,
-      );
+    accessToken: accessToken,
+    fullName: fullName,
+    email: email,
+    phone: phone,
+    avatarUrl: avatarUrl,
+  );
 
   Future<Map<String, dynamic>> me(String accessToken) =>
       AuthApi.instance.me(accessToken);

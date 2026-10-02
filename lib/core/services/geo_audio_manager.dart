@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+
 import '../../data/models/poi.dart';
 import '../../data/remote/api_client.dart';
 import 'auth_service.dart';
@@ -55,7 +56,10 @@ class GeoAudioManager extends ChangeNotifier {
       if (accessToken == null || accessToken.isEmpty) {
         _currentContents = [];
       } else {
-        final contents = await ApiClient.instance.getStallContents(poi.id, accessToken);
+        final contents = await ApiClient.instance.getStallContents(
+          poi.id,
+          accessToken,
+        );
         _currentContents = contents;
       }
     } catch (e) {
@@ -68,18 +72,24 @@ class GeoAudioManager extends ChangeNotifier {
   Future<void> _commitListeningHistoryIfNeeded() async {
     if (_currentPoi == null || _currentContents.isEmpty) return;
     if (_currentContentStartTime == null) return;
-    if (_currentContentIndex < 0 || _currentContentIndex >= _currentContents.length) return;
+    if (_currentContentIndex < 0 ||
+        _currentContentIndex >= _currentContents.length)
+      return;
 
     final content = _currentContents[_currentContentIndex];
     final stallContentId = content['id'] as String? ?? '';
-    final durationSeconds = DateTime.now().difference(_currentContentStartTime!).inSeconds;
+    final durationSeconds = DateTime.now()
+        .difference(_currentContentStartTime!)
+        .inSeconds;
 
     _currentContentStartTime = null;
 
     if (durationSeconds <= 0) return;
 
     try {
-      print('[ListeningHistory] commit: stall=${_currentPoi?.id}, content=$stallContentId, duration=$durationSeconds');
+      print(
+        '[ListeningHistory] commit: stall=${_currentPoi?.id}, content=$stallContentId, duration=$durationSeconds',
+      );
       await ListeningHistoryService.instance.addHistory(
         stallId: _currentPoi?.id ?? '',
         stallContentId: stallContentId,
@@ -158,6 +168,43 @@ class GeoAudioManager extends ChangeNotifier {
     _currentContentIndex = 0;
     _currentContentStartTime = null;
     notifyListeners();
+  }
+
+  /// 1. Lấy bài thuyết minh hiện tại
+  Map<String, dynamic>? get currentContent {
+    if (_currentContents.isEmpty ||
+        _currentContentIndex < 0 ||
+        _currentContentIndex >= _currentContents.length) {
+      return null;
+    }
+    return _currentContents[_currentContentIndex];
+  }
+
+  String get currentTitle =>
+      currentContent?['title'] ?? _currentPoi?.name ?? '';
+  String get currentAudioUrl => currentContent?['audio_url'] ?? '';
+
+  /// 2. Expose các Stream thời gian từ just_audio cho UI cập nhật Slider
+  Stream<Duration> get positionStream => _audioPlayer.positionStream;
+  Stream<Duration?> get durationStream => _audioPlayer.durationStream;
+  Stream<PlayerState> get playerStateStream => _audioPlayer.playerStateStream;
+  Duration get currentPosition => _audioPlayer.position;
+  Duration? get currentDuration => _audioPlayer.duration;
+
+  /// 3. Các hàm điều khiển Seek (Tua)
+  Future<void> seek(Duration position) async {
+    await _audioPlayer.seek(position);
+  }
+
+  Future<void> seekForward({int seconds = 10}) async {
+    final newPos = _audioPlayer.position + Duration(seconds: seconds);
+    final dur = _audioPlayer.duration ?? Duration.zero;
+    await _audioPlayer.seek(newPos > dur ? dur : newPos);
+  }
+
+  Future<void> seekBackward({int seconds = 10}) async {
+    final newPos = _audioPlayer.position - Duration(seconds: seconds);
+    await _audioPlayer.seek(newPos < Duration.zero ? Duration.zero : newPos);
   }
 
   void addListen(Duration d) {
