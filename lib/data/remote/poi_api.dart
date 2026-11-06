@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:http/http.dart' as http;
 import 'package:seminar_mobile/core/services/locale_provider.dart';
 
+import '../../core/services/auth_service.dart';
 import 'api_client.dart';
 import 'http_client.dart';
 
@@ -16,8 +17,8 @@ class PoiApi {
 
   Uri _uri(String path) => Uri.parse('${ApiClient.instance.baseUrl}$path');
 
-  /// Fetches stalls from backend API trying candidate path variations to prevent 404s
-  Future<List<Map<String, dynamic>>> listStalls(
+  /// Fetches POIs from backend API trying candidate path variations
+  Future<List<Map<String, dynamic>>> listPois(
     String accessToken, {
     String? search,
     double? latitude,
@@ -37,17 +38,19 @@ class PoiApi {
 
     if (latitude != null && longitude != null) {
       queryParams['latitude'] = latitude.toString();
+      queryParams['lat'] = latitude.toString();
       queryParams['longitude'] = longitude.toString();
+      queryParams['lng'] = longitude.toString();
     }
 
-    // Candidate URL paths to handle trailing slash variations
+    // Candidate URL paths (ưu tiên /pois chuẩn mới, fallback /stalls)
     final candidatePaths = [
-      '/api/v1/mobile/stalls',
-      '/api/v1/mobile/stalls/',
-      '/mobile/stalls/',
+      '/mobile/pois',
+      '/mobile/pois/',
+      '/api/v1/mobile/pois',
       '/mobile/stalls',
-      '/stalls/',
-      '/stalls',
+      '/mobile/stalls/',
+      '/api/v1/mobile/stalls',
     ];
 
     http.Response? lastResponse;
@@ -61,6 +64,12 @@ class PoiApi {
               (PlatformDispatcher.instance.locale.languageCode),
           'Accept': 'application/json',
         };
+
+        final deviceId = AuthService.instance.deviceId;
+        if (deviceId.isNotEmpty) {
+          headers['X-Device-Id'] = deviceId;
+        }
+
         if (accessToken.isNotEmpty) {
           headers['Authorization'] = 'Bearer $accessToken';
         }
@@ -73,13 +82,23 @@ class PoiApi {
 
         if (res.statusCode == 200) {
           final body = jsonDecode(res.body);
-          if (body is Map && body['data'] != null) {
+          if (body is Map) {
             if (body['data'] is List) {
               return List<Map<String, dynamic>>.from(body['data'] as List);
             } else if (body['data'] is Map && body['data']['items'] is List) {
               return List<Map<String, dynamic>>.from(
                 body['data']['items'] as List,
               );
+            } else if (body['items'] is List) {
+              return List<Map<String, dynamic>>.from(body['items'] as List);
+            } else if (body['poi'] is List) {
+              return List<Map<String, dynamic>>.from(body['poi'] as List);
+            } else {
+              // Fallback for FastAPI standard pagination response without explicit 'items' wrapper
+              // Check if keys contain standard dict items but missing 'items' explicitly
+              try {
+                return [Map<String, dynamic>.from(body)];
+              } catch (_) {}
             }
           } else if (body is List) {
             return List<Map<String, dynamic>>.from(body);
@@ -98,18 +117,35 @@ class PoiApi {
     return <Map<String, dynamic>>[];
   }
 
-  /// Fetches content for a stall
-  Future<List<Map<String, dynamic>>> getStallContents(
-    String stallId,
+  /// Alias tương thích ngược cho listStalls
+  Future<List<Map<String, dynamic>>> listStalls(
+    String accessToken, {
+    String? search,
+    double? latitude,
+    double? longitude,
+    int limit = 20,
+    int offset = 0,
+  }) => listPois(
+    accessToken,
+    search: search,
+    latitude: latitude,
+    longitude: longitude,
+    limit: limit,
+    offset: offset,
+  );
+
+  /// Fetches content for a POI
+  Future<List<Map<String, dynamic>>> getPoiContents(
+    String poiId,
     String accessToken,
   ) async {
     final candidatePaths = [
-      '/api/v1/mobile/stalls/$stallId/content',
-      '/api/v1/mobile/stalls/$stallId/content/',
-      '/mobile/stalls/$stallId/content/',
-      '/mobile/stalls/$stallId/content',
-      '/mobile/stall-contents/$stallId/',
-      '/mobile/stall-contents/$stallId',
+      '/mobile/pois/$poiId/content',
+      '/mobile/pois/$poiId/content/',
+      '/api/v1/mobile/pois/$poiId/content',
+      '/mobile/stalls/$poiId/content',
+      '/mobile/stalls/$poiId/content/',
+      '/api/v1/mobile/stalls/$poiId/content',
     ];
 
     for (final path in candidatePaths) {
@@ -120,6 +156,11 @@ class PoiApi {
               (PlatformDispatcher.instance.locale.languageCode),
           'Accept': 'application/json',
         };
+        final deviceId = AuthService.instance.deviceId;
+        if (deviceId.isNotEmpty) {
+          headers['X-Device-Id'] = deviceId;
+        }
+
         if (accessToken.isNotEmpty) {
           headers['Authorization'] = 'Bearer $accessToken';
         }
@@ -150,18 +191,14 @@ class PoiApi {
     return <Map<String, dynamic>>[];
   }
 
-  /// Fetches detail for a single stall
-  Future<Map<String, dynamic>?> getStall(
-    String stallId,
+  /// Fetches content for all POIs based on language
+  Future<List<Map<String, dynamic>>> loadAllPoiContents(
     String accessToken,
   ) async {
     final candidatePaths = [
-      '/api/v1/mobile/stalls/$stallId',
-      '/api/v1/mobile/stalls/$stallId/',
-      '/mobile/stalls/$stallId/',
-      '/mobile/stalls/$stallId',
-      '/stalls/$stallId/',
-      '/stalls/$stallId',
+      '/mobile/content/load-all',
+      '/mobile/content/load-all/',
+      '/api/v1/mobile/content/load-all',
     ];
 
     for (final path in candidatePaths) {
@@ -172,6 +209,138 @@ class PoiApi {
               (PlatformDispatcher.instance.locale.languageCode),
           'Accept': 'application/json',
         };
+        final deviceId = AuthService.instance.deviceId;
+        if (deviceId.isNotEmpty) {
+          headers['X-Device-Id'] = deviceId;
+        }
+
+        if (accessToken.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $accessToken';
+        }
+
+        final res = await HttpClientWithTokenRefresh.instance.get(
+          _uri(path),
+          headers: headers,
+          timeout: _timeout,
+        );
+
+        if (res.statusCode == 200) {
+          final body = jsonDecode(res.body);
+          if (body is Map && body['data'] != null) {
+            if (body['data'] is List) {
+              return List<Map<String, dynamic>>.from(body['data'] as List);
+            }
+          } else if (body is List) {
+            return List<Map<String, dynamic>>.from(body);
+          }
+          return <Map<String, dynamic>>[];
+        }
+      } catch (_) {
+        // Try next candidate
+      }
+    }
+
+    return <Map<String, dynamic>>[];
+  }
+
+  /// Fetches nearby unlistened content
+  Future<List<Map<String, dynamic>>> getNearbyContent(
+    String accessToken, {
+    required double latitude,
+    required double longitude,
+  }) async {
+    final queryParams = <String, String>{
+      'lat': latitude.toString(),
+      'lng': longitude.toString(),
+      'latitude': latitude.toString(),
+      'longitude': longitude.toString(),
+    };
+
+    final candidatePaths = [
+      '/mobile/content/nearby',
+      '/mobile/content/nearby/',
+      '/api/v1/mobile/content/nearby',
+    ];
+
+    for (final path in candidatePaths) {
+      final uri = _uri(path).replace(queryParameters: queryParams);
+      try {
+        final headers = <String, String>{
+          'Accept-Language':
+              LocaleProvider.instance.locale?.languageCode ??
+              (PlatformDispatcher.instance.locale.languageCode),
+          'Accept': 'application/json',
+        };
+        final deviceId = AuthService.instance.deviceId;
+        if (deviceId.isNotEmpty) {
+          headers['X-Device-Id'] = deviceId;
+        }
+
+        if (accessToken.isNotEmpty) {
+          headers['Authorization'] = 'Bearer $accessToken';
+        }
+
+        final res = await HttpClientWithTokenRefresh.instance.get(
+          uri,
+          headers: headers,
+          timeout: _timeout,
+        );
+
+        if (res.statusCode == 200) {
+          final body = jsonDecode(res.body);
+          if (body is Map) {
+            if (body['data'] is List) {
+              return List<Map<String, dynamic>>.from(body['data'] as List);
+            } else if (body['data'] is Map && body['data']['items'] is List) {
+              return List<Map<String, dynamic>>.from(
+                body['data']['items'] as List,
+              );
+            } else if (body['items'] is List) {
+              return List<Map<String, dynamic>>.from(body['items'] as List);
+            }
+          } else if (body is List) {
+            return List<Map<String, dynamic>>.from(body);
+          }
+          return <Map<String, dynamic>>[];
+        }
+      } catch (_) {
+        // Try next candidate
+      }
+    }
+
+    return <Map<String, dynamic>>[];
+  }
+
+  /// Alias tương thích ngược cho getStallContents
+  Future<List<Map<String, dynamic>>> getStallContents(
+    String stallId,
+    String accessToken,
+  ) => getPoiContents(stallId, accessToken);
+
+  /// Fetches detail for a single POI
+  Future<Map<String, dynamic>?> getPoi(String poiId, String accessToken) async {
+    final candidatePaths = [
+      '/mobile/pois/$poiId',
+      '/mobile/pois/$poiId/',
+      '/api/v1/mobile/pois/$poiId',
+      '/mobile/stalls/$poiId',
+      '/mobile/stalls/$poiId/',
+      '/api/v1/mobile/stalls/$poiId',
+    ];
+
+    for (final path in candidatePaths) {
+      try {
+        final headers = <String, String>{
+          'Accept-Language':
+              LocaleProvider.instance.locale?.languageCode ??
+              (PlatformDispatcher.instance.locale.languageCode),
+          'Accept': 'application/json',
+        };
+        final deviceId = AuthService.instance.deviceId;
+        if (deviceId.isNotEmpty) {
+          headers['X-Device-Id'] = deviceId;
+        }
+
         if (accessToken.isNotEmpty) {
           headers['Authorization'] = 'Bearer $accessToken';
         }
@@ -198,6 +367,10 @@ class PoiApi {
 
     return null;
   }
+
+  /// Alias tương thích ngược cho getStall
+  Future<Map<String, dynamic>?> getStall(String stallId, String accessToken) =>
+      getPoi(stallId, accessToken);
 
   String _parseError(http.Response res) {
     String raw;
@@ -226,7 +399,6 @@ class PoiApi {
     try {
       final body = jsonDecode(raw);
 
-      // Update lại theo format Exception Handler  của Backend
       if (body is Map) {
         if (body['message'] != null && body['message'].toString().isNotEmpty) {
           return fixMojibake(body['message'].toString());
@@ -234,7 +406,6 @@ class PoiApi {
         if (body['error'] != null && body['error'].toString().isNotEmpty) {
           return fixMojibake(body['error'].toString());
         }
-        // Fallback lại detail lỡ như gọi nhầm endpoint ko qua handler
         if (body['detail'] != null) {
           return fixMojibake(body['detail'].toString());
         }

@@ -7,7 +7,6 @@ import 'package:latlong2/latlong.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/geo_audio_manager.dart';
 import '../../core/services/location_service.dart';
-import '../../data/local/mock_pois.dart';
 import '../../data/models/poi.dart';
 import '../../data/remote/poi_api.dart';
 import '../../features/map/map_controller.dart';
@@ -17,6 +16,7 @@ import '../widgets/home_map_view.dart';
 import '../widgets/home_poi_list_view.dart';
 import '../widgets/home_search_bar.dart';
 import '../widgets/mini_player_widget.dart';
+import '../widgets/nearby_contents_sheet.dart';
 import '../widgets/poi_quick_view_sheet.dart';
 import 'poi_detail_page.dart';
 
@@ -28,7 +28,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
   bool _isMapView =
       true; // Toggle between Map View (true) and List View (false)
 
@@ -58,6 +57,7 @@ class _HomePageState extends State<HomePage> {
   bool _isLoadingPois = false;
   bool _isLoadingLocation = true;
   Poi? _selectedPoi;
+  LatLng? _tappedPosition;
 
   // Default fallback center (District 4, Ho Chi Minh City)
   static final LatLng _defaultCenter = LatLng(
@@ -151,28 +151,23 @@ class _HomePageState extends State<HomePage> {
 
       if (mounted) {
         setState(() {
-          _pois = fetchedPois.isNotEmpty ? fetchedPois : mockPois;
+          _pois = fetchedPois; // Chỉ dùng dữ liệu thật từ Backend
           _isLoadingPois = false;
         });
       }
     } catch (e) {
-      // Gracefully fallback to local search on mock POIs if API call fails
       if (mounted) {
-        final q = (search ?? '').toLowerCase().trim();
-        final filteredMock = q.isEmpty
-            ? mockPois
-            : mockPois.where((poi) {
-                final nameMatches = poi.name.toLowerCase().contains(q);
-                final catMatches =
-                    poi.category != null &&
-                    poi.category!.toLowerCase().contains(q);
-                return nameMatches || catMatches;
-              }).toList();
-
+        // Nếu lỗi, không dùng mock nữa, chỉ báo rỗng và tắt loading
         setState(() {
-          _pois = filteredMock;
+          _pois = [];
           _isLoadingPois = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể kết nối đến máy chủ: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     }
   }
@@ -252,6 +247,9 @@ class _HomePageState extends State<HomePage> {
   void _onPoiTapped(Poi poi) {
     setState(() {
       _selectedPoi = poi;
+      if (poi.latitude != 0.0 && poi.longitude != 0.0) {
+        _tappedPosition = LatLng(poi.latitude, poi.longitude);
+      }
     });
 
     if (poi.latitude != 0.0 && poi.longitude != 0.0) {
@@ -276,6 +274,94 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+    );
+  }
+
+  /// Khi người dùng chạm vào một điểm bất kỳ trên bản đồ:
+  /// 1. Đặt marker tại vị trí vừa chạm
+  /// 2. Lấy danh sách nội dung lân cận từ Backend
+  /// 3. Nếu có, hiển thị danh sách và tự động phát thuyết minh
+  Future<void> _onMapTapped(LatLng point) async {
+    setState(() {
+      _tappedPosition = point;
+    });
+
+    final token = AuthService.instance.accessToken ?? '';
+
+    // Gọi API lấy nội dung thuyết minh các quán lân cận
+    final nearbyContents = await PoiApi.instance.getNearbyContent(
+      token,
+      latitude: point.latitude,
+      longitude: point.longitude,
+    );
+
+    if (nearbyContents.isEmpty) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Không có điểm thuyết minh nào xung quanh vị trí này (Bán kính 30m).',
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.playlist_play, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Tìm thấy ${nearbyContents.length} bài thuyết minh lân cận. Bắt đầu phát tự động...',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green.shade700,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // Tạo dummy POI để làm meta (nếu GeoAudioManager bắt buộc dùng)
+    final firstPoiName =
+        (nearbyContents.first['stall_name'] ??
+                nearbyContents.first['poi_name'] ??
+                'Khu vực lân cận')
+            .toString();
+    final firstPoiId =
+        (nearbyContents.first['poi_id'] ??
+                nearbyContents.first['stall_id'] ??
+                'nearby')
+            .toString();
+
+    final dummyPoi = Poi(
+      id: firstPoiId,
+      name: firstPoiName,
+      latitude: point.latitude,
+      longitude: point.longitude,
+    );
+
+    // Mở BottomSheet hiển thị danh sách Playlist POIs
+    if (mounted) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => NearbyContentsSheet(contents: nearbyContents),
+      );
+    }
+
+    // Tự động tải nội dung và phát thuyết minh audio theo chuỗi
+    await GeoAudioManager.instance.enterPoi(
+      dummyPoi,
+      initialContents: nearbyContents,
+      autoPlay: true,
     );
   }
 
@@ -336,7 +422,9 @@ class _HomePageState extends State<HomePage> {
                           currentPosition: _currentPosition,
                           pois: _pois,
                           selectedPoi: _selectedPoi,
+                          tappedPosition: _tappedPosition,
                           onPoiTapped: _onPoiTapped,
+                          onMapTapped: _onMapTapped,
                         )
                       else
                         // List View Mode
@@ -403,13 +491,12 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           AppBottomNav(
-            currentIndex: _currentIndex,
+            currentIndex: 0,
             onTap: (index) {
               if (index == 1) {
-                // Không đổi _currentIndex vì ta push sang 1 màn hình hoàn toàn mới
-                Navigator.pushNamed(context, '/profile');
-              } else {
-                setState(() => _currentIndex = index);
+                Navigator.pushReplacementNamed(context, '/listening_history');
+              } else if (index == 2) {
+                Navigator.pushReplacementNamed(context, '/profile');
               }
             },
           ),

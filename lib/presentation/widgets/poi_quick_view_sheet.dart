@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../core/services/geo_audio_manager.dart';
 import '../../core/services/location_service.dart';
 import '../../data/models/poi.dart';
 
@@ -164,10 +165,28 @@ class PoiQuickViewSheet extends StatelessWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // Placeholder for audio narration (Epic 2)
+                    Navigator.pop(context);
+                    GeoAudioManager.instance.enterPoi(poi, autoPlay: true);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Đang phát thuyết minh: ${poi.name}'),
+                        content: Row(
+                          children: [
+                            const Icon(
+                              Icons.volume_up,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Đang phát thuyết minh: ${poi.name}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: Colors.green.shade700,
                         duration: const Duration(seconds: 2),
                       ),
                     );

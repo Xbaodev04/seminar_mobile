@@ -8,7 +8,8 @@ class ApiClient {
   /// Set this to your running API address. For Android emulator use 10.0.2.2
   String baseUrl = const String.fromEnvironment(
     'SEMINAR_API_BASE',
-    defaultValue: 'http://10.0.2.2:8000/api/v1',
+    // defaultValue: 'http://10.0.2.2:8000/api/v1',
+    defaultValue: 'http://192.168.1.8:8000/api/v1',
   );
 
   Future<Map<String, dynamic>> login({
@@ -112,6 +113,36 @@ class ApiClient {
   Future<Map<String, dynamic>> loginDevice({required String deviceId}) =>
       AuthApi.instance.loginDevice(deviceId: deviceId);
 
+  // ==========================================
+  // POI APIs (Chuẩn mới đồng nhất)
+  // ==========================================
+  Future<List<Map<String, dynamic>>> listPois(
+    String accessToken, {
+    String? search,
+    double? latitude,
+    double? longitude,
+    int limit = 20,
+    int offset = 0,
+  }) => PoiApi.instance.listPois(
+    accessToken,
+    search: search,
+    latitude: latitude,
+    longitude: longitude,
+    limit: limit,
+    offset: offset,
+  );
+
+  Future<List<Map<String, dynamic>>> getPoiContents(
+    String poiId,
+    String accessToken,
+  ) => PoiApi.instance.getPoiContents(poiId, accessToken);
+
+  Future<Map<String, dynamic>?> getPoi(String poiId, String accessToken) =>
+      PoiApi.instance.getPoi(poiId, accessToken);
+
+  // ==========================================
+  // Alias tương thích ngược cho stalls
+  // ==========================================
   Future<List<Map<String, dynamic>>> listStalls(
     String accessToken, {
     String? search,
@@ -119,7 +150,7 @@ class ApiClient {
     double? longitude,
     int limit = 20,
     int offset = 0,
-  }) => PoiApi.instance.listStalls(
+  }) => listPois(
     accessToken,
     search: search,
     latitude: latitude,
@@ -131,8 +162,8 @@ class ApiClient {
   Future<List<Map<String, dynamic>>> getStallContents(
     String stallId,
     String accessToken,
-  ) => PoiApi.instance.getStallContents(stallId, accessToken);
+  ) => getPoiContents(stallId, accessToken);
 
   Future<Map<String, dynamic>?> getStall(String stallId, String accessToken) =>
-      PoiApi.instance.getStall(stallId, accessToken);
+      getPoi(stallId, accessToken);
 }

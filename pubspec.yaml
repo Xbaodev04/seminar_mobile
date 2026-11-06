@@ -50,8 +50,9 @@ dependencies:
   # Location
   geolocator: ^14.1.1
   
-  # Audio playback
+  # Audio playback & Text-To-Speech
   just_audio: ^0.10.6
+  flutter_tts: ^4.2.1
 
   # QR Code scanner
   mobile_scanner: ^7.4.2

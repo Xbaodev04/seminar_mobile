@@ -81,11 +81,13 @@ class AuthApi {
   }) async {
     http.Response? lastRes;
     for (final subPath in subPaths) {
+      final cleanSubPath = subPath.endsWith('/') && subPath.length > 1
+          ? subPath.substring(0, subPath.length - 1)
+          : subPath;
       final candidatePaths = [
-        '/api/v1$subPath',
-        '/api/v1$subPath/',
-        subPath,
-        '$subPath/',
+        cleanSubPath,
+        '$cleanSubPath/',
+        if (!cleanSubPath.startsWith('/api/v1')) '/api/v1$cleanSubPath',
       ];
       for (final path in candidatePaths) {
         try {
@@ -100,6 +102,7 @@ class AuthApi {
       }
     }
     if (lastRes != null) return lastRes;
+
     throw Exception('Endpoint not found (404)');
   }
 
@@ -109,11 +112,21 @@ class AuthApi {
   }) async {
     http.Response? lastRes;
     for (final subPath in subPaths) {
+      String cleanSubPath = subPath;
+      if (subPath.contains('?')) {
+        final parts = subPath.split('?');
+        final p = parts[0].endsWith('/') && parts[0].length > 1
+            ? parts[0].substring(0, parts[0].length - 1)
+            : parts[0];
+        cleanSubPath = '$p?${parts[1]}';
+      } else if (subPath.endsWith('/') && subPath.length > 1) {
+        cleanSubPath = subPath.substring(0, subPath.length - 1);
+      }
+
       final candidatePaths = [
-        '/api/v1$subPath',
-        '/api/v1$subPath/',
+        cleanSubPath,
         subPath,
-        '$subPath/',
+        if (!subPath.startsWith('/api/v1')) '/api/v1$subPath',
       ];
       for (final path in candidatePaths) {
         try {
@@ -360,7 +373,7 @@ class AuthApi {
     };
 
     final queryStr = Uri(queryParameters: query).query;
-    final subPath = '/mobile/listening-history/?$queryStr';
+    final subPath = '/mobile/listening-history?$queryStr';
     final headers = <String, String>{
       'Authorization': 'Bearer $accessToken',
       'Accept': 'application/json',
@@ -389,13 +402,15 @@ class AuthApi {
     int? listenDuration,
   }) async {
     final res = await _postReqWithCandidates(
-      ['/mobile/listening-history/'],
+      ['/mobile/listening-history'],
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
       body: jsonEncode({
+        'poi_id': stallId,
         'stall_id': stallId,
+        'poi_content_id': stallContentId,
         'stall_content_id': stallContentId,
         'listened_at': listenedAt,
         if (listenDuration != null) 'listen_duration': listenDuration,

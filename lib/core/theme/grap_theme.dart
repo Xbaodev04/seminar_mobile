@@ -31,11 +31,11 @@ ThemeData grapTheme() {
     primary: const Color(0xFF305669), // deep teal
     secondary: const Color(0xFFC1785A), // warm accent
     tertiary: const Color(0xFF8ABEB9), // soft teal
-    surfaceVariant: const Color(0xFFF7FBF7), // subtle light background as surface variant
+    surfaceVariant: const Color(
+      0xFFF7FBF7,
+    ), // subtle light background as surface variant
     surface: Colors.white,
   );
-
-  final notoSansTextTheme = GoogleFonts.notoSansTextTheme();
 
   return ThemeData(
     useMaterial3: true,
@@ -73,16 +73,24 @@ ThemeData grapTheme() {
     ),
     // Use Google Fonts Noto Sans for better multilingual coverage
     fontFamily: GoogleFonts.notoSans().fontFamily,
-    pageTransitionsTheme: const PageTransitionsTheme(builders: {
-      TargetPlatform.android: const _NoTransitionsBuilder(),
-      TargetPlatform.iOS: const _NoTransitionsBuilder(),
-      TargetPlatform.linux: const _NoTransitionsBuilder(),
-      TargetPlatform.macOS: const _NoTransitionsBuilder(),
-      TargetPlatform.windows: const _NoTransitionsBuilder(),
-    }),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: const _NoTransitionsBuilder(),
+        TargetPlatform.iOS: const _NoTransitionsBuilder(),
+        TargetPlatform.linux: const _NoTransitionsBuilder(),
+        TargetPlatform.macOS: const _NoTransitionsBuilder(),
+        TargetPlatform.windows: const _NoTransitionsBuilder(),
+      },
+    ),
     textTheme: const TextTheme().copyWith(
-      titleLarge: GoogleFonts.notoSans(fontSize: 20, fontWeight: FontWeight.w600),
-      headlineMedium: GoogleFonts.notoSans(fontSize: 18, fontWeight: FontWeight.bold),
+      titleLarge: GoogleFonts.notoSans(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+      ),
+      headlineMedium: GoogleFonts.notoSans(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+      ),
       bodyLarge: GoogleFonts.notoSans(fontSize: 14, color: Colors.black87),
     ),
   );

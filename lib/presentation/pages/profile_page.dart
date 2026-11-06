@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:seminar_mobile/core/services/auth_service.dart';
+import 'package:seminar_mobile/core/services/geo_audio_manager.dart';
 import 'package:seminar_mobile/l10n/app_localizations.dart';
+import 'package:seminar_mobile/presentation/pages/poi_detail_page.dart';
+import 'package:seminar_mobile/presentation/widgets/app_bottom_nav.dart';
 import 'package:seminar_mobile/presentation/widgets/app_toast.dart';
-import '../widgets/app_bottom_nav.dart';
-import '../widgets/language_selector.dart';
-import '../../core/services/auth_service.dart';
+import 'package:seminar_mobile/presentation/widgets/language_selector.dart';
+import 'package:seminar_mobile/presentation/widgets/mini_player_widget.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -22,12 +25,12 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return ListenableBuilder(
       listenable: AuthService.instance,
       builder: (context, _) {
         final user = AuthService.instance.user;
-        
+
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -69,7 +72,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     padding: const EdgeInsets.all(12.0),
                     child: Row(
                       children: [
-                        CircleAvatar(
+                        const CircleAvatar(
                           radius: 32,
                           child: Icon(Icons.person, size: 32),
                         ),
@@ -79,7 +82,8 @@ class _ProfilePageState extends State<ProfilePage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                user?.full_name ?? AppLocalizations.of(context)!.userLabel,
+                                user?.full_name ??
+                                    AppLocalizations.of(context)!.userLabel,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -114,13 +118,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     children: [
                       ListTile(
-                        shape: RoundedRectangleBorder(
+                        shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.vertical(
                             top: Radius.circular(12),
                           ),
                         ),
                         leading: Icon(Icons.edit, color: colorScheme.onSurface),
-                        title: Text(AppLocalizations.of(context)!.editProfileLabel),
+                        title: Text(
+                          AppLocalizations.of(context)!.editProfileLabel,
+                        ),
                         onTap: () {
                           Navigator.of(context).pushNamed('/update_profile');
                         },
@@ -128,14 +134,19 @@ class _ProfilePageState extends State<ProfilePage> {
                       const Divider(height: 1),
                       ListTile(
                         leading: Icon(Icons.lock, color: colorScheme.onSurface),
-                        title: Text(AppLocalizations.of(context)!.changePasswordLabel),
+                        title: Text(
+                          AppLocalizations.of(context)!.changePasswordLabel,
+                        ),
                         onTap: () {
                           Navigator.of(context).pushNamed('/change_password');
                         },
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: Icon(Icons.language, color: colorScheme.onSurface),
+                        leading: Icon(
+                          Icons.language,
+                          color: colorScheme.onSurface,
+                        ),
                         title: Text(
                           AppLocalizations.of(context)!.languageLabel,
                           style: TextStyle(color: colorScheme.onSurface),
@@ -218,13 +229,35 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ],
             ),
-            bottomNavigationBar: AppBottomNav(
-              currentIndex: 1, // 0 for Home, 1 for Profile
-              onTap: (index) {
-                if (index == 0) {
-                  Navigator.of(context).pushReplacementNamed('/home');
-                }
-              },
+            bottomNavigationBar: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                MiniPlayerWidget(
+                  onTap: () {
+                    final poi = GeoAudioManager.instance.currentPoi;
+                    if (poi != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PoiDetailPage(poi: poi),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                AppBottomNav(
+                  currentIndex: 2, // 0 for Home, 1 for History, 2 for Profile
+                  onTap: (index) {
+                    if (index == 0) {
+                      Navigator.of(context).pushReplacementNamed('/home');
+                    } else if (index == 1) {
+                      Navigator.of(
+                        context,
+                      ).pushReplacementNamed('/listening_history');
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         );
