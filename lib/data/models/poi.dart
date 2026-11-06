@@ -44,36 +44,61 @@ class Poi {
     return 0.0;
   }
 
-  factory Poi.fromJson(Map<String, dynamic> json) => Poi(
-    id: json['id']?.toString() ?? '',
-    ownerId: json['owner_id']?.toString(),
-    ownerName: json['owner_name']?.toString(),
-    name: (json['name'] ?? json['title'] ?? 'Quán ăn').toString(),
-    category: json['category']?.toString(),
-    latitude: _parseCoordinate(
-      json['latitude'] ?? json['lat'] ?? json['y'] ?? json['location_lat'],
-    ),
-    longitude: _parseCoordinate(
-      json['longitude'] ?? json['lng'] ?? json['x'] ?? json['location_lng'],
-    ),
-    coverImage: _buildFullImageUrl(
-      json['cover_image']?.toString() ?? json['image']?.toString(),
-    ),
-    priceRange: json['price_range']?.toString(),
-    openingHours: json['opening_hours']?.toString(),
-    contactPhone: json['contact_phone']?.toString(),
-    website: json['website']?.toString(),
-    averageRating: json['average_rating'] != null
-        ? double.tryParse(json['average_rating'].toString())
-        : null,
-    totalReviews: json['total_reviews'] is int
-        ? json['total_reviews'] as int
-        : int.tryParse(json['total_reviews']?.toString() ?? ''),
-    radius: json['radius'] is int
-        ? json['radius'] as int
-        : int.tryParse(json['radius']?.toString() ?? ''),
-    languageCode: json['language_code']?.toString(),
-  );
+  factory Poi.fromJson(Map<String, dynamic> json) {
+    // Xử lý object location lồng nhau (nếu có)
+    dynamic location = json['location'];
+    double lat = 0.0;
+    double lng = 0.0;
+
+    if (location is Map) {
+      lat = _parseCoordinate(
+        location['latitude'] ?? location['lat'] ?? location['coordinates']?[1],
+      );
+      lng = _parseCoordinate(
+        location['longitude'] ?? location['lng'] ?? location['coordinates']?[0],
+      );
+    } else if (location is String) {
+      final parts = location.split(',');
+      if (parts.length == 2) {
+        lat = _parseCoordinate(parts[0]);
+        lng = _parseCoordinate(parts[1]);
+      }
+    } else {
+      lat = _parseCoordinate(
+        json['latitude'] ?? json['lat'] ?? json['y'] ?? json['location_lat'],
+      );
+      lng = _parseCoordinate(
+        json['longitude'] ?? json['lng'] ?? json['x'] ?? json['location_lng'],
+      );
+    }
+
+    return Poi(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      ownerId: json['owner_id']?.toString(),
+      ownerName: json['owner_name']?.toString(),
+      name: (json['name'] ?? json['title'] ?? 'Quán ăn').toString(),
+      category: json['category']?.toString(),
+      latitude: lat,
+      longitude: lng,
+      coverImage: _buildFullImageUrl(
+        json['cover_image']?.toString() ?? json['image']?.toString(),
+      ),
+      priceRange: json['price_range']?.toString(),
+      openingHours: json['opening_hours']?.toString(),
+      contactPhone: json['contact_phone']?.toString(),
+      website: json['website']?.toString(),
+      averageRating: json['average_rating'] != null
+          ? double.tryParse(json['average_rating'].toString())
+          : null,
+      totalReviews: json['total_reviews'] is int
+          ? json['total_reviews'] as int
+          : int.tryParse(json['total_reviews']?.toString() ?? ''),
+      radius: json['radius'] is int
+          ? json['radius'] as int
+          : int.tryParse(json['radius']?.toString() ?? ''),
+      languageCode: json['language_code']?.toString(),
+    );
+  }
 
   static String? _buildFullImageUrl(String? coverImage) {
     if (coverImage == null || coverImage.isEmpty) return null;

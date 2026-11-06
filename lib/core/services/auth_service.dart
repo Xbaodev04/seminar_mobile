@@ -47,6 +47,7 @@ class AuthService extends ChangeNotifier {
 
   late SharedPreferences _prefs;
   late String _deviceId;
+  String get deviceId => _deviceId;
   OnlineStatusService? _onlineStatusService;
 
   OnlineStatusService? get onlineStatusService => _onlineStatusService;

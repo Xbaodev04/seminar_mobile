@@ -11,11 +11,12 @@ class LocaleProvider extends ChangeNotifier {
   Locale? get locale => _locale;
 
   List<Locale> get supportedLocales => const [
-        Locale('en'),
-        Locale('vi'),
-        Locale('zh'),
-        Locale('ko'),
-      ];
+    Locale('vi'),
+    Locale('en'),
+    Locale('ja'),
+    Locale('zh'),
+    Locale('ko'),
+  ];
 
   Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();

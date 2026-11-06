@@ -3,9 +3,11 @@ import 'package:geolocator/geolocator.dart';
 
 import '../../core/services/auth_service.dart';
 import '../../core/services/geo_audio_manager.dart';
+import '../../core/services/locale_provider.dart';
 import '../../core/services/location_service.dart';
 import '../../data/models/poi.dart';
 import '../../data/remote/poi_api.dart';
+import '../../engines/tts_engine.dart';
 
 class PoiDetailPage extends StatefulWidget {
   final Poi poi;
@@ -29,7 +31,7 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
     _loadAdditionalDetails();
   }
 
-  /// Load extra stall info and audio narration contents from backend
+  /// Load extra stall info and audio narration contents from backend with auto translation
   Future<void> _loadAdditionalDetails() async {
     setState(() {
       _isLoadingContent = true;
@@ -42,6 +44,29 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
         widget.poi.id,
         token,
       );
+
+      final targetLang = LocaleProvider.instance.locale?.languageCode ?? 'vi';
+
+      // Dynamic Translation for contents if user selected another language
+      for (final content in contents) {
+        final rawTitle = (content['title'] ?? widget.poi.name).toString();
+        final rawText =
+            (content['text_content'] ?? content['description'] ?? '')
+                .toString();
+
+        if (rawText.isNotEmpty && targetLang != 'en') {
+          final translatedTitle = await TtsEngine.instance.translateText(
+            text: rawTitle,
+            targetLang: targetLang,
+          );
+          final translatedText = await TtsEngine.instance.translateText(
+            text: rawText,
+            targetLang: targetLang,
+          );
+          content['translated_title'] = translatedTitle;
+          content['translated_text'] = translatedText;
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -78,9 +103,9 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // 1. Hero Image / Sliver App Bar
+          // 1. Sliver App Bar with Cover Image
           SliverAppBar(
-            expandedHeight: 260.0,
+            expandedHeight: 250.0,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
@@ -88,7 +113,7 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  shadows: [Shadow(color: Colors.black87, blurRadius: 10)],
+                  shadows: [Shadow(color: Colors.black54, blurRadius: 6)],
                 ),
               ),
               background: Stack(
@@ -357,8 +382,12 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
 
                   if (_contents.isNotEmpty)
                     ..._contents.map((content) {
-                      final title = content['title'] ?? poi.name;
+                      final title =
+                          content['translated_title'] ??
+                          content['title'] ??
+                          poi.name;
                       final description =
+                          content['translated_text'] ??
                           content['text_content'] ??
                           content['description'] ??
                           'Chưa có bài viết mô tả chi tiết.';
@@ -456,76 +485,103 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
     );
   }
 
-  Widget _buildFullAudioPlayer(BuildContext context) {
-    final manager = GeoAudioManager.instance;
+  Widget _buildCoverPlaceholder() {
+    return Container(
+      color: Colors.orange.shade100,
+      child: const Center(
+        child: Icon(Icons.restaurant, size: 64, color: Colors.orange),
+      ),
+    );
+  }
 
+  Widget _buildFullAudioPlayer(BuildContext context) {
     return ListenableBuilder(
-      listenable: manager,
+      listenable: GeoAudioManager.instance,
       builder: (context, _) {
-        if (manager.currentPoi?.id != widget.poi.id ||
-            manager.currentContents.isEmpty) {
-          return const SizedBox.shrink();
-        }
+        final manager = GeoAudioManager.instance;
+        final currentPoi = manager.currentPoi;
+        final isCurrentPoi = currentPoi?.id == widget.poi.id;
+
+        if (!isCurrentPoi) return const SizedBox.shrink();
 
         return Card(
+          elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           color: Colors.orange.shade50,
-          elevation: 2,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Text(
-                  manager.currentTitle,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.graphic_eq, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        manager.currentTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
 
-                // Slider tiến trình & Thời gian
+                // Audio Slider
                 StreamBuilder<Duration>(
                   stream: manager.positionStream,
                   builder: (context, snapshot) {
-                    final pos = snapshot.data ?? Duration.zero;
-                    final dur = manager.currentDuration ?? Duration.zero;
-                    final maxSec = dur.inSeconds > 0
-                        ? dur.inSeconds.toDouble()
-                        : 1.0;
-                    final currentSec = pos.inSeconds.toDouble().clamp(
+                    final position = snapshot.data ?? Duration.zero;
+                    final duration = manager.currentDuration ?? Duration.zero;
+                    final maxVal = duration.inMilliseconds.toDouble();
+                    final currentVal = position.inMilliseconds.toDouble().clamp(
                       0.0,
-                      maxSec,
+                      maxVal > 0 ? maxVal : 1.0,
                     );
 
                     return Column(
                       children: [
-                        Slider(
-                          value: currentSec,
-                          max: maxSec,
-                          activeColor: Colors.orange,
-                          onChanged: (val) {
-                            manager.seek(Duration(seconds: val.toInt()));
-                          },
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            trackHeight: 4,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 6,
+                            ),
+                          ),
+                          child: Slider(
+                            value: currentVal,
+                            max: maxVal > 0 ? maxVal : 1.0,
+                            activeColor: Colors.orange,
+                            inactiveColor: Colors.orange.shade100,
+                            onChanged: (value) {
+                              manager.seek(
+                                Duration(milliseconds: value.toInt()),
+                              );
+                            },
+                          ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                _formatDuration(pos),
+                                _formatDuration(position),
                                 style: const TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: Colors.grey,
                                 ),
                               ),
                               Text(
-                                _formatDuration(dur),
+                                _formatDuration(duration),
                                 style: const TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: Colors.grey,
                                 ),
                               ),
@@ -537,14 +593,15 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                   },
                 ),
 
-                // Bộ nút điều khiển: Tua lùi 10s, Play/Pause, Tua tới 10s
+                // Audio Controls (Rewind, Play/Pause, Fast Forward)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.replay_10),
-                      iconSize: 32,
-                      onPressed: () => manager.seekBackward(seconds: 10),
+                      icon: const Icon(Icons.replay_10_rounded),
+                      iconSize: 28,
+                      color: Colors.orange,
+                      onPressed: () => manager.seekBackward(),
                     ),
                     const SizedBox(width: 16),
                     IconButton(
@@ -553,15 +610,16 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                             ? Icons.pause_circle_filled
                             : Icons.play_circle_fill,
                       ),
-                      iconSize: 56,
+                      iconSize: 48,
                       color: Colors.orange,
                       onPressed: () => manager.togglePlay(),
                     ),
                     const SizedBox(width: 16),
                     IconButton(
-                      icon: const Icon(Icons.forward_10),
-                      iconSize: 32,
-                      onPressed: () => manager.seekForward(seconds: 10),
+                      icon: const Icon(Icons.forward_10_rounded),
+                      iconSize: 28,
+                      color: Colors.orange,
+                      onPressed: () => manager.seekForward(),
                     ),
                   ],
                 ),
@@ -577,14 +635,5 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
     final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
-  }
-
-  Widget _buildCoverPlaceholder() {
-    return Container(
-      color: Colors.grey[300],
-      child: const Center(
-        child: Icon(Icons.fastfood, size: 80, color: Colors.grey),
-      ),
-    );
   }
 }

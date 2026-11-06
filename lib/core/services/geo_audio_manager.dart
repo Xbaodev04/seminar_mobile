@@ -3,8 +3,10 @@ import 'package:just_audio/just_audio.dart';
 
 import '../../data/models/poi.dart';
 import '../../data/remote/api_client.dart';
+import '../../engines/tts_engine.dart';
 import 'auth_service.dart';
 import 'listening_history_service.dart';
+import 'locale_provider.dart';
 
 /// A singleton manager that controls audio playback for POI content
 class GeoAudioManager extends ChangeNotifier {
@@ -17,6 +19,14 @@ class GeoAudioManager extends ChangeNotifier {
         // User paused/stopped via external controls (lockscreen/media keys)
         _isPlaying = false;
         await _commitListeningHistoryIfNeeded();
+        notifyListeners();
+      }
+    });
+
+    TtsEngine.instance.addListener(() {
+      final tts = TtsEngine.instance;
+      if (tts.isSpeaking != _isPlaying) {
+        _isPlaying = tts.isSpeaking;
         notifyListeners();
       }
     });
@@ -46,6 +56,7 @@ class GeoAudioManager extends ChangeNotifier {
     Poi poi, {
     String? language,
     List<Map<String, dynamic>>? initialContents,
+    bool autoPlay = false,
   }) async {
     _currentPoi = poi;
     _isPlaying = false;
@@ -56,23 +67,27 @@ class GeoAudioManager extends ChangeNotifier {
 
     if (initialContents != null && initialContents.isNotEmpty) {
       _currentContents = initialContents;
-      notifyListeners();
+      if (autoPlay && _currentContents.isNotEmpty) {
+        await playContent(0);
+      } else {
+        notifyListeners();
+      }
       return;
     }
 
-    // Fetch stall contents with user language if not provided
+    // Fetch stall contents (public endpoint, works with or without accessToken)
     try {
-      final accessToken = AuthService.instance.accessToken;
-      if (accessToken == null || accessToken.isEmpty) {
-        _currentContents = [];
-      } else {
-        final contents = await ApiClient.instance.getStallContents(
-          poi.id,
-          accessToken,
-        );
-        _currentContents = contents;
+      final accessToken = AuthService.instance.accessToken ?? '';
+      final contents = await ApiClient.instance.getStallContents(
+        poi.id,
+        accessToken,
+      );
+      _currentContents = contents;
+      if (autoPlay && _currentContents.isNotEmpty) {
+        await playContent(0);
       }
     } catch (e) {
+      debugPrint('[GeoAudioManager] getStallContents error: $e');
       _currentContents = [];
     }
 
@@ -83,8 +98,9 @@ class GeoAudioManager extends ChangeNotifier {
     if (_currentPoi == null || _currentContents.isEmpty) return;
     if (_currentContentStartTime == null) return;
     if (_currentContentIndex < 0 ||
-        _currentContentIndex >= _currentContents.length)
+        _currentContentIndex >= _currentContents.length) {
       return;
+    }
 
     final content = _currentContents[_currentContentIndex];
     final stallContentId = content['id'] as String? ?? '';
@@ -121,28 +137,66 @@ class GeoAudioManager extends ChangeNotifier {
     _currentContentIndex = index;
     final content = _currentContents[index];
     final audioUrl = content['audio_url'] as String?;
+    final targetLang = LocaleProvider.instance.locale?.languageCode ?? 'vi';
+    final textToSpeak =
+        (content['translated_text'] ??
+                content['text_content'] ??
+                content['description'] ??
+                content['title'] ??
+                '')
+            .toString();
 
-    if (audioUrl == null || audioUrl.isEmpty) return;
+    // 1. Ưu tiên phát file Audio MP3 từ Backend nếu có sẵn
+    if (audioUrl != null && audioUrl.isNotEmpty) {
+      try {
+        await TtsEngine.instance.stop(); // Stop TTS nếu đang nói
+        _isPlaying = true;
 
-    try {
-      _isPlaying = true;
+        // Build full URL if it's a relative path (e.g. /static/audio/xyz.mp3)
+        String fullUrl = audioUrl;
+        if (!audioUrl.startsWith('http')) {
+          final baseUri = Uri.parse(ApiClient.instance.baseUrl);
+          final hostBase =
+              '${baseUri.scheme}://${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+          fullUrl =
+              '$hostBase${audioUrl.startsWith('/') ? audioUrl : '/$audioUrl'}';
+        }
 
-      // Build full URL if it's a relative path
-      String fullUrl = audioUrl;
-      if (!audioUrl.startsWith('http')) {
-        fullUrl = '${ApiClient.instance.baseUrl}$audioUrl';
+        await _audioPlayer.setUrl(fullUrl);
+        _currentContentStartTime = DateTime.now();
+        await _audioPlayer.play();
+
+        notifyListeners();
+        return;
+      } catch (e) {
+        debugPrint(
+          '[GeoAudioManager] Audio URL playback error: $e, falling back to TTS',
+        );
       }
-
-      await _audioPlayer.setUrl(fullUrl);
-      _currentContentStartTime = DateTime.now();
-      await _audioPlayer.play();
-
-      notifyListeners();
-    } catch (e) {
-      _isPlaying = false;
-      _currentContentStartTime = null;
-      notifyListeners();
     }
+
+    // 2. Fallback sang Text-To-Speech nếu không có audioUrl hoặc phát file bị lỗi
+    if (textToSpeak.isNotEmpty) {
+      try {
+        await _audioPlayer.stop(); // Stop MP3 player
+        _isPlaying = true;
+        _currentContentStartTime = DateTime.now();
+
+        await TtsEngine.instance.speak(
+          text: textToSpeak,
+          targetLang: targetLang,
+        );
+
+        notifyListeners();
+        return;
+      } catch (e) {
+        debugPrint('[GeoAudioManager] TTS fallback error: $e');
+      }
+    }
+
+    _isPlaying = false;
+    _currentContentStartTime = null;
+    notifyListeners();
   }
 
   Future<void> playNextContent() async {
@@ -154,13 +208,33 @@ class GeoAudioManager extends ChangeNotifier {
   }
 
   Future<void> togglePlay() async {
+    final targetLang = LocaleProvider.instance.locale?.languageCode ?? 'vi';
+
     if (_isPlaying) {
-      await _audioPlayer.pause();
+      if (targetLang != 'en') {
+        await TtsEngine.instance.stop();
+      } else {
+        await _audioPlayer.pause();
+      }
       _isPlaying = false;
       await _commitListeningHistoryIfNeeded();
     } else {
       if (_currentContents.isNotEmpty) {
-        await _audioPlayer.play();
+        if (targetLang != 'en') {
+          final content = _currentContents[_currentContentIndex];
+          final textToSpeak =
+              (content['translated_text'] ??
+                      content['text_content'] ??
+                      content['description'] ??
+                      '')
+                  .toString();
+          await TtsEngine.instance.speak(
+            text: textToSpeak,
+            targetLang: targetLang,
+          );
+        } else {
+          await _audioPlayer.play();
+        }
         _isPlaying = true;
         _currentContentStartTime ??= DateTime.now();
       }
@@ -170,6 +244,7 @@ class GeoAudioManager extends ChangeNotifier {
 
   Future<void> leavePoi() async {
     await _audioPlayer.stop();
+    await TtsEngine.instance.stop();
     await _commitListeningHistoryIfNeeded();
     _currentPoi = null;
     _isPlaying = false;
@@ -191,7 +266,10 @@ class GeoAudioManager extends ChangeNotifier {
   }
 
   String get currentTitle =>
-      currentContent?['title'] ?? _currentPoi?.name ?? '';
+      currentContent?['translated_title'] ??
+      currentContent?['title'] ??
+      _currentPoi?.name ??
+      '';
   String get currentAudioUrl => currentContent?['audio_url'] ?? '';
 
   /// 2. Expose các Stream thời gian từ just_audio cho UI cập nhật Slider

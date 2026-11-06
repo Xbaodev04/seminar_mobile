@@ -8,8 +8,8 @@ class MapFeatureController {
 
   // District 4, HCMC Map Bounds (South-West to North-East)
   final LatLngBounds district4Bounds = LatLngBounds(
-    const LatLng(10.7430, 106.6900),
-    const LatLng(10.7720, 106.7150),
+    const LatLng(10.7450, 106.6850),
+    const LatLng(10.7720, 106.7250),
   );
 
   // Zoom limits focused on District 4
@@ -17,7 +17,7 @@ class MapFeatureController {
   final double maxZoom = 18.0;
 
   LatLng getDefaultCenter(List<Poi> pois) {
-    if (pois.isEmpty) return const LatLng(10.7580, 106.7020);
+    if (pois.isEmpty) return const LatLng(10.7582, 106.7028);
     return LatLng(pois[0].latitude, pois[0].longitude);
   }
 

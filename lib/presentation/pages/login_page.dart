@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:seminar_mobile/core/services/auth_service.dart';
-import 'package:seminar_mobile/presentation/widgets/app_toast.dart';
 import 'package:seminar_mobile/core/theme/grap_theme.dart';
 import 'package:seminar_mobile/l10n/app_localizations.dart';
-import 'register_page.dart';
+import 'package:seminar_mobile/presentation/widgets/app_toast.dart';
+
 import 'forgot_password_page.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -19,13 +20,10 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtrl = TextEditingController();
   bool _loading = false;
 
-  void _showError(String msg) => AppToast.showError(context, msg);
-
   Future<void> _submitEmail() async {
     if (!_formKey.currentState!.validate()) return;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final theme = Theme.of(context);
     setState(() => _loading = true);
     try {
       await AuthService.instance.signInWithEmail(
@@ -52,7 +50,6 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _signInGoogle() async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final theme = Theme.of(context);
     setState(() => _loading = true);
     try {
       await AuthService.instance.signInWithGoogle();
@@ -219,46 +216,57 @@ class _LoginPageState extends State<LoginPage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              TextButton(
-                                onPressed: _loading
-                                    ? null
-                                    : () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const ForgotPasswordPage(),
-                                          ),
-                                        );
-                                      },
-                                child: Text(
-                                  AppLocalizations.of(context)!.forgotPassword,
-                                  style: TextStyle(
-                                    decoration: TextDecoration.underline,
-                                    color: Theme.of(
+                              Flexible(
+                                child: TextButton(
+                                  onPressed: _loading
+                                      ? null
+                                      : () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const ForgotPasswordPage(),
+                                            ),
+                                          );
+                                        },
+                                  child: Text(
+                                    AppLocalizations.of(
                                       context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
+                                    )!.forgotPassword,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
-                              TextButton(
-                                onPressed: _loading
-                                    ? null
-                                    : () => Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) => const RegisterPage(),
+                              Flexible(
+                                child: TextButton(
+                                  onPressed: _loading
+                                      ? null
+                                      : () => Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const RegisterPage(),
+                                          ),
                                         ),
-                                      ),
-                                child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.createAccountNew,
-                                  style: TextStyle(
-                                    decoration: TextDecoration.underline,
-                                    color: Theme.of(
+                                  child: Text(
+                                    AppLocalizations.of(
                                       context,
-                                    ).colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
+                                    )!.createAccountNew,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      decoration: TextDecoration.underline,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
