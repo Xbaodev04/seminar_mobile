@@ -5,6 +5,7 @@ import 'package:seminar_mobile/data/remote/poi_api.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/geo_audio_manager.dart';
 import '../../core/services/locale_provider.dart';
+import '../../core/services/locale_provider.dart';
 import '../../core/services/location_service.dart';
 import '../../data/models/poi.dart';
 import '../../engines/tts_engine.dart';

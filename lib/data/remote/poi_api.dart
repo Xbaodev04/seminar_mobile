@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:seminar_mobile/core/services/locale_provider.dart';
 
 import '../../core/services/auth_service.dart';
+import '../../core/services/auth_service.dart';
 import 'api_client.dart';
 import 'http_client.dart';
 

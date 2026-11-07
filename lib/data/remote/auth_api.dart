@@ -408,9 +408,7 @@ class AuthApi {
         'Authorization': 'Bearer $accessToken',
       },
       body: jsonEncode({
-        'poi_id': stallId,
         'stall_id': stallId,
-        'poi_content_id': stallContentId,
         'stall_content_id': stallContentId,
         'listened_at': listenedAt,
         if (listenDuration != null) 'listen_duration': listenDuration,

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -13,8 +12,6 @@ class TtsEngine extends ChangeNotifier {
   static final TtsEngine instance = TtsEngine._private();
 
   final FlutterTts _flutterTts = FlutterTts();
-  final StreamController<void> _completionController =
-      StreamController<void>.broadcast();
 
   bool _isTranslating = false;
   bool _isSpeaking = false;
@@ -25,7 +22,8 @@ class TtsEngine extends ChangeNotifier {
   bool get isSpeaking => _isSpeaking;
   String get translatedText => _translatedText;
   String? get lastError => _lastError;
-  Stream<void> get onCompletion => _completionController.stream;
+
+  get onCompletion => null;
 
   void _initTts() {
     _flutterTts.setStartHandler(() {
@@ -36,7 +34,6 @@ class TtsEngine extends ChangeNotifier {
     _flutterTts.setCompletionHandler(() {
       _isSpeaking = false;
       notifyListeners();
-      _completionController.add(null);
     });
 
     _flutterTts.setErrorHandler((msg) {

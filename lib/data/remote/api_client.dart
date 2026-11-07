@@ -105,7 +105,7 @@ class ApiClient {
       AuthApi.instance.me(accessToken);
 
   Future<Map<String, dynamic>> refresh(String refreshToken) =>
-      AuthApi.instance.refresh(refreshToken);
+    AuthApi.instance.refresh(refreshToken);
 
   Future<Map<String, dynamic>> googleLogin({required String idToken}) =>
       AuthApi.instance.googleLogin(idToken: idToken);
