@@ -17,3 +17,4 @@ class Cooldown {
     _lastTriggerTime = null;
   }
 }
+
