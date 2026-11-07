@@ -4,7 +4,8 @@ import 'package:seminar_mobile/core/services/auth_service.dart';
 import 'package:seminar_mobile/core/services/locale_provider.dart';
 import 'package:seminar_mobile/core/theme/grap_theme.dart';
 import 'package:seminar_mobile/l10n/app_localizations.dart';
-import 'package:seminar_mobile/presentation/pages/listening_history_page.dart';
+import 'presentation/pages/listening_history_page.dart';
+import 'presentation/pages/qr_scan_page.dart';
 
 import 'presentation/pages/change_password_page.dart';
 import 'presentation/pages/forgot_password_page.dart';
@@ -129,6 +130,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/change_password': (ctx) => const ChangePasswordPage(),
         '/update_profile': (ctx) => const UpdateProfilePage(),
         '/listening_history': (ctx) => const ListeningHistoryPage(),
+        '/qr_scan': (ctx) => const QrScanPage(),
       },
     );
   }

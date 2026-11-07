@@ -395,6 +395,13 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Quét mã QR',
+            onPressed: () {
+              Navigator.of(context).pushNamed('/qr_scan');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Làm mới dữ liệu',
             onPressed: () {
