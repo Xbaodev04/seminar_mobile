@@ -5,7 +5,6 @@ import 'package:seminar_mobile/data/remote/poi_api.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/geo_audio_manager.dart';
 import '../../core/services/locale_provider.dart';
-import '../../core/services/locale_provider.dart';
 import '../../core/services/location_service.dart';
 import '../../data/models/poi.dart';
 import '../../engines/tts_engine.dart';
@@ -277,11 +276,10 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đang mở bản đồ chỉ đường...'),
-                            ),
-                          );
+                          Navigator.pop(
+                            context,
+                            true,
+                          ); // Trả về true để HomePage vẽ đường
                         },
                         icon: const Icon(Icons.directions),
                         label: const Text('Chỉ đường'),

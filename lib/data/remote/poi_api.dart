@@ -6,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:seminar_mobile/core/services/locale_provider.dart';
 
 import '../../core/services/auth_service.dart';
-import '../../core/services/auth_service.dart';
 import 'api_client.dart';
 import 'http_client.dart';
 
@@ -346,22 +345,28 @@ class PoiApi {
           headers['Authorization'] = 'Bearer $accessToken';
         }
 
+        final url = _uri(path);
+        print('[PoiApi] getPoi request: $url');
         final res = await HttpClientWithTokenRefresh.instance.get(
-          _uri(path),
+          url,
           headers: headers,
           timeout: _timeout,
         );
 
+        print('[PoiApi] getPoi response (${res.statusCode}): ${res.body}');
+
         if (res.statusCode == 200) {
           final body = jsonDecode(res.body);
-          if (body is Map && body['data'] != null) {
-            return body['data'] as Map<String, dynamic>;
-          } else if (body is Map<String, dynamic>) {
-            return body;
+          if (body is Map) {
+            if (body['data'] != null && body['data'] is Map) {
+              return Map<String, dynamic>.from(body['data'] as Map);
+            }
+            return Map<String, dynamic>.from(body);
           }
           return null;
         }
-      } catch (_) {
+      } catch (e) {
+        print('[PoiApi] getPoi error: $e');
         // Try next candidate
       }
     }

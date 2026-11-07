@@ -270,3 +270,4 @@ class _QrScanPageState extends State<QrScanPage> {
     );
   }
 }
+

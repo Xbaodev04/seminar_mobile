@@ -80,6 +80,8 @@ class AuthApi {
     Object? body,
   }) async {
     http.Response? lastRes;
+    Exception? lastException;
+
     for (final subPath in subPaths) {
       final cleanSubPath = subPath.endsWith('/') && subPath.length > 1
           ? subPath.substring(0, subPath.length - 1)
@@ -91,17 +93,21 @@ class AuthApi {
       ];
       for (final path in candidatePaths) {
         try {
+          print('[AuthApi] Try POST: $path');
           final res = await _postReq(path, headers: headers, body: body);
           if (res.statusCode != 404) {
             return res;
           }
           lastRes = res;
-        } catch (_) {
+        } catch (e) {
+          print('[AuthApi] POST Error: $e');
+          lastException = e is Exception ? e : Exception(e.toString());
           // Continue trying next candidate
         }
       }
     }
     if (lastRes != null) return lastRes;
+    if (lastException != null) throw lastException;
 
     throw Exception('Endpoint not found (404)');
   }
@@ -467,11 +473,14 @@ class AuthApi {
   }
 
   Future<Map<String, dynamic>> loginDevice({required String deviceId}) async {
+    print('[AuthApi] loginDevice called with deviceId=$deviceId');
     final res = await _postReqWithCandidates(
       ['/mobile/auth/login-device', '/mobile/auth/login_device'],
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'device_id': deviceId, 'deviceId': deviceId}),
     );
+
+    print('[AuthApi] loginDevice response (${res.statusCode}): ${res.body}');
 
     if (res.statusCode >= 400) {
       throw Exception(_parseError(res));

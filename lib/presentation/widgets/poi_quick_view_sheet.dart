@@ -9,12 +9,14 @@ class PoiQuickViewSheet extends StatelessWidget {
   final Poi poi;
   final Position? userPosition;
   final VoidCallback? onTapDetail;
+  final VoidCallback? onTapRoute;
 
   const PoiQuickViewSheet({
     super.key,
     required this.poi,
     this.userPosition,
     this.onTapDetail,
+    this.onTapRoute,
   });
 
   @override
@@ -151,8 +153,8 @@ class PoiQuickViewSheet extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onTapDetail,
-                  icon: const Icon(Icons.info_outline),
-                  label: const Text('Xem chi tiết'),
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  label: const Text('Chi tiết', style: TextStyle(fontSize: 13)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -161,9 +163,29 @@ class PoiQuickViewSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
                 child: ElevatedButton.icon(
+                  onPressed: onTapRoute,
+                  icon: const Icon(Icons.directions, size: 18),
+                  label: const Text(
+                    'Chỉ đường',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                     GeoAudioManager.instance.enterPoi(poi, autoPlay: true);
@@ -191,15 +213,17 @@ class PoiQuickViewSheet extends StatelessWidget {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: const Text('Nghe thuyết minh'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Icon(Icons.play_arrow_rounded),
                   ),
                 ),
               ),

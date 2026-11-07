@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/geo_audio_manager.dart';
 import '../../core/services/location_service.dart';
+import '../../core/services/route_service.dart';
 import '../../data/models/poi.dart';
 import '../../data/remote/poi_api.dart';
 import '../../features/map/map_controller.dart';
@@ -58,6 +59,7 @@ class _HomePageState extends State<HomePage> {
   bool _isLoadingLocation = true;
   Poi? _selectedPoi;
   LatLng? _tappedPosition;
+  List<LatLng> _currentRoute = [];
 
   // Default fallback center (District 4, Ho Chi Minh City)
   static final LatLng _defaultCenter = LatLng(
@@ -247,6 +249,7 @@ class _HomePageState extends State<HomePage> {
   void _onPoiTapped(Poi poi) {
     setState(() {
       _selectedPoi = poi;
+      _currentRoute = []; // Xoá đường đi cũ khi chọn POI mới
       if (poi.latitude != 0.0 && poi.longitude != 0.0) {
         _tappedPosition = LatLng(poi.latitude, poi.longitude);
       }
@@ -271,10 +274,63 @@ class _HomePageState extends State<HomePage> {
               builder: (context) =>
                   PoiDetailPage(poi: poi, userPosition: _currentPosition),
             ),
-          );
+          ).then((drawRoute) {
+            if (drawRoute == true) {
+              _drawRouteToPoi(poi);
+            }
+          });
+        },
+        onTapRoute: () async {
+          Navigator.pop(ctx);
+          await _drawRouteToPoi(poi);
         },
       ),
     );
+  }
+
+  /// Vẽ đường đi từ vị trí hiện tại đến POI
+  Future<void> _drawRouteToPoi(Poi poi) async {
+    if (_currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chưa lấy được vị trí hiện tại của bạn.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    final start = LatLng(
+      _currentPosition!.latitude,
+      _currentPosition!.longitude,
+    );
+    final destination = LatLng(poi.latitude, poi.longitude);
+
+    final route = await RouteService.instance.getRoute(start, destination);
+
+    if (mounted) {
+      setState(() {
+        _currentRoute = route;
+        _isMapView = true;
+        _isLoadingLocation = false;
+      });
+
+      if (route.isNotEmpty) {
+        // Zoom out a bit to show both points
+        _mapFeatureController.moveToLatLng(
+          LatLng(
+            (start.latitude + destination.latitude) / 2,
+            (start.longitude + destination.longitude) / 2,
+          ),
+          zoom: 14.5,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể tìm thấy đường đi.')),
+        );
+      }
+    }
   }
 
   /// Khi người dùng chạm vào một điểm bất kỳ trên bản đồ:
@@ -430,6 +486,7 @@ class _HomePageState extends State<HomePage> {
                           pois: _pois,
                           selectedPoi: _selectedPoi,
                           tappedPosition: _tappedPosition,
+                          routePoints: _currentRoute,
                           onPoiTapped: _onPoiTapped,
                           onMapTapped: _onMapTapped,
                         )

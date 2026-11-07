@@ -13,6 +13,7 @@ class HomeMapView extends StatelessWidget {
   final List<Poi> pois;
   final Poi? selectedPoi;
   final LatLng? tappedPosition;
+  final List<LatLng>? routePoints;
   final ValueChanged<Poi> onPoiTapped;
   final ValueChanged<LatLng>? onMapTapped;
 
@@ -24,6 +25,7 @@ class HomeMapView extends StatelessWidget {
     required this.pois,
     required this.selectedPoi,
     this.tappedPosition,
+    this.routePoints,
     required this.onPoiTapped,
     this.onMapTapped,
   });
@@ -204,6 +206,18 @@ class HomeMapView extends StatelessWidget {
           userAgentPackageName: 'com.example.seminar_mobile',
         ),
 
+        // Route Polyline Layer
+        if (routePoints != null && routePoints!.isNotEmpty)
+          PolylineLayer(
+            polylines: [
+              Polyline(
+                points: routePoints!,
+                color: Colors.blueAccent,
+                strokeWidth: 5.0,
+              ),
+            ],
+          ),
+
         // Vòng tròn hiển thị bán kính (geofence radius) của POI đang được chọn/nghe
         if (selectedPoi != null &&
             selectedPoi!.latitude != 0.0 &&
@@ -212,7 +226,8 @@ class HomeMapView extends StatelessWidget {
             circles: [
               CircleMarker(
                 point: LatLng(selectedPoi!.latitude, selectedPoi!.longitude),
-                radius: (selectedPoi!.radius != null && selectedPoi!.radius! > 0)
+                radius:
+                    (selectedPoi!.radius != null && selectedPoi!.radius! > 0)
                     ? selectedPoi!.radius!.toDouble()
                     : 30.0,
                 useRadiusInMeter: true,
