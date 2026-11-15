@@ -9,10 +9,10 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get appTitle => 'Street Food Go';
+  String get appTitle => 'Culinary Tourism';
 
   @override
-  String get menuTitle => 'Street Food Go — Menu';
+  String get menuTitle => 'Culinary Tourism — Menu';
 
   @override
   String get mapTitle => 'Bản đồ';
@@ -440,4 +440,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get selectPoiTitle => 'Chọn quán';
+
+  @override
+  String get analyticsConsentTitle => 'Chia sẻ thống kê nghe thuyết minh';
+
+  @override
+  String get analyticsConsentDescription => 'Cho phép ghi nhận ẩn danh lượt phát, ngôn ngữ và thời lượng nghe để chủ quán cải thiện thuyết minh. Không gửi tên, email hay vị trí của bạn. Bạn có thể thay đổi lựa chọn trong Hồ sơ.';
+
+  @override
+  String get analyticsConsentAllow => 'Cho phép';
+
+  @override
+  String get analyticsConsentDecline => 'Không chia sẻ';
 }

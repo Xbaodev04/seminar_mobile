@@ -1,7 +1,7 @@
 {
   "@@locale": "zh",
-  "appTitle": "Street Food Go",
-  "menuTitle": "Street Food Go — 菜单",
+  "appTitle": "Culinary Tourism",
+  "menuTitle": "Culinary Tourism — 菜单",
   "mapTitle": "地图",
   "poiListTitle": "地点列表",
   "settingsTitle": "设置",
@@ -73,18 +73,15 @@
   "loggedOutMsg": "已登出",
   "backToLogin": "返回登录",
   "forgotPassword": "忘记密码",
-
   "buyPackageTitle": "购买套餐",
   "noActivePackageMsg": "您尚未订购套餐。请购买套餐以继续。",
   "buyNowToast": "购买功能将会实现",
   "buyNowButton": "立即购买",
   "skipPurchase": "跳过（试用）",
-
   "forgotPasswordDesc": "输入您的电子邮件以接收重置代码。",
   "resetSentMsg": "密码重置邮件已发送",
   "sendResetButton": "发送",
   "resetSuccessMsg": "密码重置成功",
-
   "resendOtpText": "重新发送",
   "resetPasswordTitle": "重置密码",
   "resetPasswordDesc": "输入发送到您邮箱的代码并选择新密码",
@@ -92,18 +89,15 @@
   "otpLabel": "验证码",
   "newPasswordLabel": "新密码",
   "resetButton": "重置",
-
   "emailVerificationTitle": "邮箱验证",
   "emailVerificationDesc": "输入发送到您邮箱的验证码",
   "verifyButtonText": "验证",
   "backToRegister": "返回注册",
-
   "bottom_home": "首页",
   "bottom_notifications": "通知",
   "bottom_profile": "个人",
   "bottom_calendar": "日历",
   "bottom_settings": "设置",
-
   "searchPoiHint": "搜索摊位、地点...",
   "ownerLabel": "老板：",
   "descriptionTitle": "描述",
@@ -130,24 +124,32 @@
   "loginWithDevice": "使用设备登录",
   "loadPoiError": "加载 POI 失败: {error}",
   "@loadPoiError": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "audioQueue": "音频队列: {queueInfo}",
   "@audioQueue": {
-    "placeholders": {"queueInfo": {}}
+    "placeholders": {
+      "queueInfo": {}
+    }
   },
   "pointNotInPoiZone": "选定点不在任何 POI 区域",
   "audioQueueFinished": "音频队列播放完成",
   "nowPlaying": "正在播放: {poiName}",
   "@nowPlaying": {
-    "placeholders": {"poiName": {}}
+    "placeholders": {
+      "poiName": {}
+    }
   },
   "pleaseLoginFirst": "请先登录",
   "scanQrCode": "扫描二维码",
   "stallNotFound": "未找到摊位",
   "error": "错误: {error}",
   "@error": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "enableLocationTitle": "启用定位服务",
   "enableLocationDesc": "请启用定位以查看附近摊位",
@@ -171,5 +173,9 @@
   "surveySubmit": "提交",
   "surveyThankYou": "感谢您的反馈！",
   "genericError": "发生了错误。",
-  "selectPoiTitle": "选择摊位"
-}     
+  "selectPoiTitle": "选择摊位",
+  "analyticsConsentTitle": "分享语音讲解收听统计",
+  "analyticsConsentDescription": "允许匿名记录播放次数、语言和收听时长，帮助商家改进讲解。不发送您的姓名、邮箱或位置。您可以在个人资料中更改选择。",
+  "analyticsConsentAllow": "允许",
+  "analyticsConsentDecline": "不分享"
+}

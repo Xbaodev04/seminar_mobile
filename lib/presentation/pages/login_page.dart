@@ -31,6 +31,7 @@ class _LoginPageState extends State<LoginPage> {
         password: _passCtrl.text,
       );
       // Show success and navigate using captured objects
+      if (!mounted) return;
       messenger.hideCurrentSnackBar();
       AppToast.showSuccess(
         context,
@@ -38,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
       );
       navigator.pushReplacementNamed('/home');
     } catch (e) {
+      if (!mounted) return;
       messenger.hideCurrentSnackBar();
       var s = e.toString();
       while (s.startsWith('Exception: ')) s = s.substring('Exception: '.length);
@@ -53,6 +55,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
     try {
       await AuthService.instance.signInWithGoogle();
+      if (!mounted) return;
       messenger.hideCurrentSnackBar();
       AppToast.showSuccess(
         context,
@@ -60,6 +63,7 @@ class _LoginPageState extends State<LoginPage> {
       );
       navigator.pushReplacementNamed('/home');
     } catch (e) {
+      if (!mounted) return;
       messenger.hideCurrentSnackBar();
       AppToast.showError(context, e.toString());
     } finally {
@@ -73,6 +77,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
     try {
       await AuthService.instance.signInWithDevice();
+      if (!mounted) return;
       messenger.hideCurrentSnackBar();
       AppToast.showSuccess(
         context,
@@ -80,6 +85,7 @@ class _LoginPageState extends State<LoginPage> {
       );
       navigator.pushReplacementNamed('/home');
     } catch (e) {
+      if (!mounted) return;
       messenger.hideCurrentSnackBar();
       var s = e.toString();
       while (s.startsWith('Exception: ')) s = s.substring('Exception: '.length);
@@ -113,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(
                           width: 82,
                           height: 82,
-                          child: Image.asset('lib/assets/imgs/favicon.png'),
+                          child: Image.asset('lib/assets/imgs/favicon.jpg'),
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -147,18 +153,16 @@ class _LoginPageState extends State<LoginPage> {
                                     prefixIcon: const Icon(
                                       Icons.email_outlined,
                                     ),
-                                    labelText: AppLocalizations.of(
-                                      context,
-                                    )!.emailLabel,
+                                    labelText: AppLocalizations.of(context)!
+                                        .emailLabel,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (v) => (v == null || v.isEmpty)
-                                      ? AppLocalizations.of(
-                                          context,
-                                        )!.enterEmailMsg
+                                      ? AppLocalizations.of(context)!
+                                            .enterEmailMsg
                                       : null,
                                 ),
                                 const SizedBox(height: 12),
@@ -166,18 +170,16 @@ class _LoginPageState extends State<LoginPage> {
                                   controller: _passCtrl,
                                   decoration: InputDecoration(
                                     prefixIcon: const Icon(Icons.lock_outline),
-                                    labelText: AppLocalizations.of(
-                                      context,
-                                    )!.passwordLabel,
+                                    labelText: AppLocalizations.of(context)!
+                                        .passwordLabel,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                   ),
                                   obscureText: true,
                                   validator: (v) => (v == null || v.isEmpty)
-                                      ? AppLocalizations.of(
-                                          context,
-                                        )!.enterPasswordMsg
+                                      ? AppLocalizations.of(context)!
+                                            .enterPasswordMsg
                                       : null,
                                 ),
                                 const SizedBox(height: 18),
@@ -190,18 +192,17 @@ class _LoginPageState extends State<LoginPage> {
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      backgroundColor: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
                                     ),
                                     child: _loading
                                         ? const CircularProgressIndicator(
                                             color: Colors.white,
                                           )
                                         : Text(
-                                            AppLocalizations.of(
-                                              context,
-                                            )!.loginButton,
+                                            AppLocalizations.of(context)!
+                                                .loginButton,
                                             style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
@@ -229,16 +230,15 @@ class _LoginPageState extends State<LoginPage> {
                                           );
                                         },
                                   child: Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.forgotPassword,
+                                    AppLocalizations.of(context)!
+                                        .forgotPassword,
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                     style: TextStyle(
                                       decoration: TextDecoration.underline,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -255,16 +255,15 @@ class _LoginPageState extends State<LoginPage> {
                                           ),
                                         ),
                                   child: Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    )!.createAccountNew,
+                                    AppLocalizations.of(context)!
+                                        .createAccountNew,
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                     style: TextStyle(
                                       decoration: TextDecoration.underline,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -289,13 +288,12 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                               style: OutlinedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.surface,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .surface,
                                 side: BorderSide(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.tertiary.withAlpha(80),
+                                  color: Theme.of(context).colorScheme.tertiary
+                                      .withAlpha(80),
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),

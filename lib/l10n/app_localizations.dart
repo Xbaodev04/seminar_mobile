@@ -104,13 +104,13 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Street Food Go'**
+  /// **'Culinary Tourism'**
   String get appTitle;
 
   /// No description provided for @menuTitle.
   ///
   /// In en, this message translates to:
-  /// **'Street Food Go — Menu'**
+  /// **'Culinary Tourism — Menu'**
   String get menuTitle;
 
   /// No description provided for @mapTitle.
@@ -934,6 +934,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select a stall'**
   String get selectPoiTitle;
+
+  /// No description provided for @analyticsConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share narration listening statistics'**
+  String get analyticsConsentTitle;
+
+  /// No description provided for @analyticsConsentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow anonymous playback counts, language and listening time to help restaurants improve their narration. Your name, email and location are not sent. You can change this choice in Profile.'**
+  String get analyticsConsentDescription;
+
+  /// No description provided for @analyticsConsentAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get analyticsConsentAllow;
+
+  /// No description provided for @analyticsConsentDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not share'**
+  String get analyticsConsentDecline;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

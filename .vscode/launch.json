@@ -1,11 +1,29 @@
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Flutter App",
-			"request": "launch",
-			"type": "dart",
-			"program": "lib/main.dart"
-		}
-	]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter App",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "Flutter Android USB (adb reverse 8000)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=SEMINAR_API_BASE=http://127.0.0.1:8000/api/v1"
+      ]
+    },
+    {
+      "name": "Flutter Android Emulator",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "toolArgs": [
+        "--dart-define=SEMINAR_API_BASE=http://10.0.2.2:8000/api/v1"
+      ]
+    }
+  ]
 }

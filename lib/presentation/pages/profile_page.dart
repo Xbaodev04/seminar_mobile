@@ -6,6 +6,7 @@ import 'package:seminar_mobile/presentation/pages/poi_detail_page.dart';
 import 'package:seminar_mobile/presentation/widgets/app_bottom_nav.dart';
 import 'package:seminar_mobile/presentation/widgets/app_toast.dart';
 import 'package:seminar_mobile/presentation/widgets/language_selector.dart';
+import '../widgets/analytics_consent.dart';
 import 'package:seminar_mobile/presentation/widgets/mini_player_widget.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -162,6 +163,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         value: true,
                         onChanged: (_) {},
                       ),
+                      const AnalyticsConsentTile(),
                       const Divider(height: 1),
                       SwitchListTile(
                         title: Text(

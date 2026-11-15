@@ -20,6 +20,7 @@ class TtsEngine extends ChangeNotifier {
   bool _isSpeaking = false;
   String _translatedText = '';
   String? _lastError;
+  int _speechGeneration = 0;
 
   bool get isTranslating => _isTranslating;
   bool get isSpeaking => _isSpeaking;
@@ -69,24 +70,40 @@ class TtsEngine extends ChangeNotifier {
     if (text.trim().isEmpty) return;
 
     final ttsLocale = _mapTtsLocale(targetLang);
+    final generation = ++_speechGeneration;
 
     try {
-      await stop();
+      await _stopDevice(generation);
+      if (generation != _speechGeneration) return;
       await _flutterTts.setLanguage(ttsLocale);
+      if (generation != _speechGeneration) return;
       await _flutterTts.setPitch(1.0);
+      if (generation != _speechGeneration) return;
       await _flutterTts.setSpeechRate(0.5);
+      if (generation != _speechGeneration) return;
       await _flutterTts.speak(text);
+      if (generation != _speechGeneration) return;
       _isSpeaking = true;
       notifyListeners();
     } catch (e) {
+      if (generation != _speechGeneration) return;
       debugPrint('[TtsEngine] TTS speak error: $e');
+      _isSpeaking = false;
+      _lastError = e.toString();
+      notifyListeners();
+      rethrow;
     }
   }
 
   /// Stop speaking
   Future<void> stop() async {
+    await _stopDevice(++_speechGeneration);
+  }
+
+  Future<void> _stopDevice(int generation) async {
     try {
       await _flutterTts.stop();
+      if (generation != _speechGeneration) return;
       _isSpeaking = false;
       notifyListeners();
     } catch (_) {}

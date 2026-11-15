@@ -7,14 +7,25 @@ import 'package:seminar_mobile/core/services/locale_provider.dart';
 
 import 'api_client.dart';
 import 'http_client.dart';
+import 'auth_response.dart';
 
 class AuthApi {
-  AuthApi._private();
-  static final AuthApi instance = AuthApi._private();
+  AuthApi({http.Client? client, String Function()? baseUrl})
+    : _client = client,
+      _baseUrl = baseUrl ?? (() => ApiClient.instance.baseUrl);
+  static final AuthApi instance = AuthApi();
+  final http.Client? _client;
+  final String Function() _baseUrl;
 
   static const _timeout = Duration(seconds: 60);
 
-  Uri _uri(String path) => Uri.parse('${ApiClient.instance.baseUrl}$path');
+  Uri _uri(String path) {
+    final base = _baseUrl().replaceFirst(RegExp(r'/+$'), '');
+    if (base.endsWith('/api/v1') && path.startsWith('/api/v1/')) {
+      path = path.substring('/api/v1'.length);
+    }
+    return Uri.parse('$base$path');
+  }
 
   Future<http.Response> _postReq(
     String path, {
@@ -28,7 +39,7 @@ class AuthApi {
       'Accept-Language': defaultLocale,
       if (headers != null) ...headers,
     };
-    if (mergedHeaders.containsKey('Authorization')) {
+    if (_client == null && mergedHeaders.containsKey('Authorization')) {
       return await HttpClientWithTokenRefresh.instance.post(
         _uri(path),
         headers: mergedHeaders,
@@ -37,12 +48,23 @@ class AuthApi {
       );
     }
     try {
-      final res = await http
-          .post(_uri(path), headers: mergedHeaders, body: body)
-          .timeout(_timeout);
+      final res =
+          await (_client?.post(
+                    _uri(path),
+                    headers: mergedHeaders,
+                    body: body,
+                  ) ??
+                  http.post(_uri(path), headers: mergedHeaders, body: body))
+              .timeout(_timeout);
       return res;
     } on TimeoutException {
-      throw Exception('Request timed out. Please check network or server.');
+      throw Exception(
+        'Backend ${_baseUrl()} không phản hồi. Kiểm tra Wi-Fi hoặc kết nối USB.',
+      );
+    } on http.ClientException {
+      throw Exception(
+        'Không thể kết nối Backend ${_baseUrl()}. Kiểm tra địa chỉ API và mạng của thiết bị.',
+      );
     }
   }
 
@@ -57,7 +79,7 @@ class AuthApi {
       'Accept-Language': defaultLocale,
       if (headers != null) ...headers,
     };
-    if (mergedHeaders.containsKey('Authorization')) {
+    if (_client == null && mergedHeaders.containsKey('Authorization')) {
       return await HttpClientWithTokenRefresh.instance.get(
         _uri(path),
         headers: mergedHeaders,
@@ -65,12 +87,19 @@ class AuthApi {
       );
     }
     try {
-      final res = await http
-          .get(_uri(path), headers: mergedHeaders)
-          .timeout(_timeout);
+      final res =
+          await (_client?.get(_uri(path), headers: mergedHeaders) ??
+                  http.get(_uri(path), headers: mergedHeaders))
+              .timeout(_timeout);
       return res;
     } on TimeoutException {
-      throw Exception('Request timed out. Please check network or server.');
+      throw Exception(
+        'Backend ${_baseUrl()} không phản hồi. Kiểm tra Wi-Fi hoặc kết nối USB.',
+      );
+    } on http.ClientException {
+      throw Exception(
+        'Không thể kết nối Backend ${_baseUrl()}. Kiểm tra địa chỉ API và mạng của thiết bị.',
+      );
     }
   }
 
@@ -80,7 +109,6 @@ class AuthApi {
     Object? body,
   }) async {
     http.Response? lastRes;
-    Exception? lastException;
 
     for (final subPath in subPaths) {
       final cleanSubPath = subPath.endsWith('/') && subPath.length > 1
@@ -93,21 +121,17 @@ class AuthApi {
       ];
       for (final path in candidatePaths) {
         try {
-          print('[AuthApi] Try POST: $path');
           final res = await _postReq(path, headers: headers, body: body);
           if (res.statusCode != 404) {
             return res;
           }
           lastRes = res;
         } catch (e) {
-          print('[AuthApi] POST Error: $e');
-          lastException = e is Exception ? e : Exception(e.toString());
-          // Continue trying next candidate
+          rethrow; // Changing URL paths cannot repair a network failure.
         }
       }
     }
     if (lastRes != null) return lastRes;
-    if (lastException != null) throw lastException;
 
     throw Exception('Endpoint not found (404)');
   }
@@ -142,7 +166,7 @@ class AuthApi {
           }
           lastRes = res;
         } catch (_) {
-          // Continue trying next candidate
+          rethrow;
         }
       }
     }
@@ -165,11 +189,10 @@ class AuthApi {
     try {
       final js = Map<String, dynamic>.from(jsonDecode(res.body) as Map);
       final access = js['accessToken'] ?? js['access_token'];
-      final refresh = js['refreshToken'] ?? js['refresh_token'];
       if (access == null || access is! String) {
         throw Exception('Login response missing tokens');
       }
-      return {'accessToken': access, 'refreshToken': refresh ?? access, ...js};
+      return normalizeAuthTokens(js);
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Invalid response from server during login');
@@ -218,11 +241,10 @@ class AuthApi {
     try {
       final js = Map<String, dynamic>.from(jsonDecode(res.body) as Map);
       final access = js['accessToken'] ?? js['access_token'];
-      final refresh = js['refreshToken'] ?? js['refresh_token'];
       if (access == null || access is! String) {
         throw Exception('Verify response missing tokens');
       }
-      return {'accessToken': access, 'refreshToken': refresh ?? access, ...js};
+      return normalizeAuthTokens(js);
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Invalid response from server during verify');
@@ -241,7 +263,11 @@ class AuthApi {
       throw Exception(_parseError(res));
     }
     try {
-      return Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+      return normalizeAuthProfile(
+        Map<String, dynamic>.from(
+          jsonDecode(utf8.decode(res.bodyBytes)) as Map,
+        ),
+      );
     } catch (e) {
       throw Exception('Invalid response from server during me');
     }
@@ -260,7 +286,11 @@ class AuthApi {
       throw Exception(_parseError(res));
     }
     try {
-      return Map<String, dynamic>.from(jsonDecode(res.body) as Map);
+      return normalizeAuthTokens(
+        Map<String, dynamic>.from(
+          jsonDecode(utf8.decode(res.bodyBytes)) as Map,
+        ),
+      );
     } catch (e) {
       throw Exception('Invalid response from server during refresh');
     }
@@ -455,17 +485,12 @@ class AuthApi {
           js['token'] ??
           js['data']?['accessToken'] ??
           js['data']?['access_token'];
-      final refresh =
-          js['refreshToken'] ??
-          js['refresh_token'] ??
-          js['data']?['refreshToken'] ??
-          js['data']?['refresh_token'];
 
       if (access == null || access is! String) {
         throw Exception('Google login response missing tokens');
       }
 
-      return {'accessToken': access, 'refreshToken': refresh ?? access, ...js};
+      return normalizeAuthTokens(js);
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Invalid response from server during Google login');
@@ -473,14 +498,11 @@ class AuthApi {
   }
 
   Future<Map<String, dynamic>> loginDevice({required String deviceId}) async {
-    print('[AuthApi] loginDevice called with deviceId=$deviceId');
     final res = await _postReqWithCandidates(
       ['/mobile/auth/login-device', '/mobile/auth/login_device'],
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'device_id': deviceId, 'deviceId': deviceId}),
     );
-
-    print('[AuthApi] loginDevice response (${res.statusCode}): ${res.body}');
 
     if (res.statusCode >= 400) {
       throw Exception(_parseError(res));
@@ -494,17 +516,12 @@ class AuthApi {
           js['token'] ??
           js['data']?['accessToken'] ??
           js['data']?['access_token'];
-      final refresh =
-          js['refreshToken'] ??
-          js['refresh_token'] ??
-          js['data']?['refreshToken'] ??
-          js['data']?['refresh_token'];
 
       if (access == null || access is! String) {
         throw Exception('Device login response missing tokens');
       }
 
-      return {'accessToken': access, 'refreshToken': refresh ?? access, ...js};
+      return normalizeAuthTokens(js);
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Invalid response from server during device login');

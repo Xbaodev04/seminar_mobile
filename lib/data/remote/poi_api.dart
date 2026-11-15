@@ -8,14 +8,41 @@ import 'package:seminar_mobile/core/services/locale_provider.dart';
 import '../../core/services/auth_service.dart';
 import 'api_client.dart';
 import 'http_client.dart';
+import 'poi_access.dart';
 
 class PoiApi {
-  PoiApi._private();
-  static final PoiApi instance = PoiApi._private();
+  PoiApi({http.Client? client, String Function()? baseUrl})
+    : _client = client,
+      _baseUrl = baseUrl ?? (() => ApiClient.instance.baseUrl);
+  static final PoiApi instance = PoiApi();
+  final http.Client? _client;
+  final String Function() _baseUrl;
 
   static const _timeout = Duration(seconds: 30);
 
-  Uri _uri(String path) => Uri.parse('${ApiClient.instance.baseUrl}$path');
+  Uri _uri(String path) {
+    final base = _baseUrl().replaceFirst(RegExp(r'/+$'), '');
+    if (base.endsWith('/api/v1') && path.startsWith('/api/v1/')) {
+      path = path.substring('/api/v1'.length);
+    }
+    return Uri.parse('$base$path');
+  }
+
+  Future<http.Response> _get(
+    Uri uri, {
+    Map<String, String>? headers,
+    required Duration timeout,
+  }) {
+    final client = _client;
+    if (client != null) {
+      return client.get(uri, headers: headers).timeout(timeout);
+    }
+    return HttpClientWithTokenRefresh.instance.get(
+      uri,
+      headers: headers,
+      timeout: timeout,
+    );
+  }
 
   /// Fetches POIs from backend API trying candidate path variations
   Future<List<Map<String, dynamic>>> listPois(
@@ -319,56 +346,62 @@ class PoiApi {
 
   /// Fetches detail for a single POI
   Future<Map<String, dynamic>?> getPoi(String poiId, String accessToken) async {
+    final id = Uri.encodeComponent(poiId);
     final candidatePaths = [
-      '/mobile/pois/$poiId',
-      '/mobile/pois/$poiId/',
-      '/api/v1/mobile/pois/$poiId',
-      '/mobile/stalls/$poiId',
-      '/mobile/stalls/$poiId/',
-      '/api/v1/mobile/stalls/$poiId',
+      '/mobile/pois/$id',
+      '/mobile/pois/$id/',
+      '/api/v1/mobile/pois/$id',
+      '/mobile/stalls/$id',
+      '/mobile/stalls/$id/',
+      '/api/v1/mobile/stalls/$id',
     ];
 
-    for (final path in candidatePaths) {
-      try {
-        final headers = <String, String>{
-          'Accept-Language':
-              LocaleProvider.instance.locale?.languageCode ??
-              (PlatformDispatcher.instance.locale.languageCode),
-          'Accept': 'application/json',
-        };
-        final deviceId = AuthService.instance.deviceId;
-        if (deviceId.isNotEmpty) {
-          headers['X-Device-Id'] = deviceId;
-        }
-
-        if (accessToken.isNotEmpty) {
-          headers['Authorization'] = 'Bearer $accessToken';
-        }
-
-        final url = _uri(path);
-        print('[PoiApi] getPoi request: $url');
-        final res = await HttpClientWithTokenRefresh.instance.get(
-          url,
-          headers: headers,
-          timeout: _timeout,
-        );
-
-        print('[PoiApi] getPoi response (${res.statusCode}): ${res.body}');
-
-        if (res.statusCode == 200) {
-          final body = jsonDecode(res.body);
-          if (body is Map) {
-            if (body['data'] != null && body['data'] is Map) {
-              return Map<String, dynamic>.from(body['data'] as Map);
-            }
-            return Map<String, dynamic>.from(body);
-          }
-          return null;
-        }
-      } catch (e) {
-        print('[PoiApi] getPoi error: $e');
-        // Try next candidate
+    for (final url in candidatePaths.map(_uri).toSet()) {
+      final headers = <String, String>{
+        'Accept-Language':
+            LocaleProvider.instance.locale?.languageCode ??
+            (PlatformDispatcher.instance.locale.languageCode),
+        'Accept': 'application/json',
+      };
+      final deviceId = AuthService.instance.deviceId;
+      if (deviceId.isNotEmpty) {
+        headers['X-Device-Id'] = deviceId;
       }
+
+      if (accessToken.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $accessToken';
+      }
+
+      final res = await _get(url, headers: headers, timeout: _timeout);
+
+      if (res.statusCode == 404) continue;
+      if (res.statusCode == 403) {
+        // Only this explicit code means the restaurant is unpublished.
+        dynamic body;
+        try {
+          body = jsonDecode(utf8.decode(res.bodyBytes));
+        } on FormatException {
+          body = null;
+        }
+        if (body is Map &&
+            body['detail'] is Map &&
+            body['detail']['code'] == 'poi_not_public') {
+          throw const PoiNotPublicException();
+        }
+      }
+      if (res.statusCode != 200) {
+        throw Exception(_parseError(res));
+      }
+
+      final body = jsonDecode(utf8.decode(res.bodyBytes));
+      if (body is Map) {
+        final data = Map<String, dynamic>.from(
+          body['data'] is Map ? body['data'] as Map : body,
+        );
+        requirePublicPoi(data);
+        return data;
+      }
+      return null;
     }
 
     return null;

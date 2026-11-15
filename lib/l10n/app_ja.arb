@@ -1,7 +1,7 @@
 {
   "@@locale": "ja",
-  "appTitle": "Street Food Go",
-  "menuTitle": "Street Food Go — メニュー",
+  "appTitle": "Culinary Tourism",
+  "menuTitle": "Culinary Tourism — メニュー",
   "mapTitle": "マップ",
   "poiListTitle": "POIリスト",
   "settingsTitle": "設定",
@@ -68,18 +68,15 @@
   "loggedOutMsg": "サインアウトしました",
   "backToLogin": "ログインに戻る",
   "forgotPassword": "パスワードをお忘れですか",
-
   "buyPackageTitle": "パッケージを購入",
   "noActivePackageMsg": "アクティブなパッケージがありません。続行するにはパッケージを購入してください。",
   "buyNowToast": "購入フローはまもなく実装されます",
   "buyNowButton": "今すぐ購入",
   "skipPurchase": "スキップ (トライアル)",
-
   "forgotPasswordDesc": "パスワードリセットコードを受け取るにはメールを入力してください。",
   "resetSentMsg": "パスワードリセットメールが送信されました",
   "sendResetButton": "送信",
   "resetSuccessMsg": "パスワードリセットに成功しました",
-
   "resendOtpText": "再送信",
   "resetPasswordTitle": "パスワードをリセット",
   "resetPasswordDesc": "メールで受け取ったコードを入力し、新しいパスワードを選択してください",
@@ -87,18 +84,15 @@
   "otpLabel": "OTP",
   "newPasswordLabel": "新しいパスワード",
   "resetButton": "リセット",
-
   "emailVerificationTitle": "メール認証",
   "emailVerificationDesc": "メールで受け取ったコードを入力してください",
   "verifyButtonText": "認証",
   "backToRegister": "登録に戻る",
-
   "bottom_home": "ホーム",
   "bottom_notifications": "通知",
   "bottom_profile": "プロフィール",
   "bottom_calendar": "カレンダー",
   "bottom_settings": "設定",
-
   "searchPoiHint": "屋台や場所を検索...",
   "ownerLabel": "オーナー：",
   "descriptionTitle": "説明",
@@ -125,24 +119,32 @@
   "loginWithDevice": "デバイスでログイン",
   "loadPoiError": "POIの読み込みに失敗しました: {error}",
   "@loadPoiError": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "audioQueue": "オーディオキュー: {queueInfo}",
   "@audioQueue": {
-    "placeholders": {"queueInfo": {}}
+    "placeholders": {
+      "queueInfo": {}
+    }
   },
   "pointNotInPoiZone": "選択した地点はPOIゾーン内ではありません",
   "audioQueueFinished": "オーディオキュー再生完了",
   "nowPlaying": "再生中: {poiName}",
   "@nowPlaying": {
-    "placeholders": {"poiName": {}}
+    "placeholders": {
+      "poiName": {}
+    }
   },
   "pleaseLoginFirst": "先にログインしてください",
   "scanQrCode": "QRコードをスキャン",
   "stallNotFound": "屋台が見つかりません",
   "error": "エラー: {error}",
   "@error": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "enableLocationTitle": "位置情報サービスを有効にしてください",
   "enableLocationDesc": "近くの屋台を見るには位置情報を有効にしてください",
@@ -166,5 +168,9 @@
   "surveySubmit": "送信",
   "surveyThankYou": "フィードバックありがとうございます！",
   "genericError": "エラーが発生しました.",
-  "selectPoiTitle": "屋台を選択"
+  "selectPoiTitle": "屋台を選択",
+  "analyticsConsentTitle": "音声ガイドの利用統計を共有",
+  "analyticsConsentDescription": "店舗の音声ガイド改善のため、再生回数、言語、視聴時間を匿名で共有します。名前、メール、位置情報は送信しません。プロフィールで変更できます。",
+  "analyticsConsentAllow": "許可",
+  "analyticsConsentDecline": "共有しない"
 }

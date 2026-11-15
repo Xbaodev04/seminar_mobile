@@ -1,11 +1,13 @@
 import 'dart:async';
+
 import 'package:http/http.dart' as http;
 import 'package:seminar_mobile/core/services/auth_service.dart';
 
 /// HTTP client wrapper that automatically handles token refresh on 401 responses
 class HttpClientWithTokenRefresh {
   HttpClientWithTokenRefresh._private();
-  static final HttpClientWithTokenRefresh instance = HttpClientWithTokenRefresh._private();
+  static final HttpClientWithTokenRefresh instance =
+      HttpClientWithTokenRefresh._private();
 
   static const _defaultTimeout = Duration(seconds: 60);
 
@@ -16,16 +18,18 @@ class HttpClientWithTokenRefresh {
     Duration timeout = _defaultTimeout,
   }) async {
     try {
-      final response = await http
-          .get(url, headers: headers)
-          .timeout(timeout);
-      
+      final response = await http.get(url, headers: headers).timeout(timeout);
+
       // Handle 401 - try to refresh token and retry once
       if (response.statusCode == 401) {
         final refreshed = await AuthService.instance.refreshAccessToken();
         if (refreshed) {
-          // Retry the request with the new token
-          return await http.get(url, headers: headers).timeout(timeout);
+          // Retry with the newly issued access token, not the expired header.
+          final retryHeaders = <String, String>{
+            ...headers ?? {},
+            'Authorization': 'Bearer ${AuthService.instance.accessToken}',
+          };
+          return await http.get(url, headers: retryHeaders).timeout(timeout);
         }
       }
       return response;
@@ -45,13 +49,19 @@ class HttpClientWithTokenRefresh {
       final response = await http
           .post(url, headers: headers, body: body)
           .timeout(timeout);
-      
+
       // Handle 401 - try to refresh token and retry once
       if (response.statusCode == 401) {
         final refreshed = await AuthService.instance.refreshAccessToken();
         if (refreshed) {
-          // Retry the request with the new token
-          return await http.post(url, headers: headers, body: body).timeout(timeout);
+          // Retry with the newly issued access token, not the expired header.
+          final retryHeaders = <String, String>{
+            ...headers ?? {},
+            'Authorization': 'Bearer ${AuthService.instance.accessToken}',
+          };
+          return await http
+              .post(url, headers: retryHeaders, body: body)
+              .timeout(timeout);
         }
       }
       return response;
@@ -71,13 +81,19 @@ class HttpClientWithTokenRefresh {
       final response = await http
           .put(url, headers: headers, body: body)
           .timeout(timeout);
-      
+
       // Handle 401 - try to refresh token and retry once
       if (response.statusCode == 401) {
         final refreshed = await AuthService.instance.refreshAccessToken();
         if (refreshed) {
-          // Retry the request with the new token
-          return await http.put(url, headers: headers, body: body).timeout(timeout);
+          // Retry with the newly issued access token, not the expired header.
+          final retryHeaders = <String, String>{
+            ...headers ?? {},
+            'Authorization': 'Bearer ${AuthService.instance.accessToken}',
+          };
+          return await http
+              .put(url, headers: retryHeaders, body: body)
+              .timeout(timeout);
         }
       }
       return response;
@@ -96,13 +112,17 @@ class HttpClientWithTokenRefresh {
       final response = await http
           .delete(url, headers: headers)
           .timeout(timeout);
-      
+
       // Handle 401 - try to refresh token and retry once
       if (response.statusCode == 401) {
         final refreshed = await AuthService.instance.refreshAccessToken();
         if (refreshed) {
-          // Retry the request with the new token
-          return await http.delete(url, headers: headers).timeout(timeout);
+          // Retry with the newly issued access token, not the expired header.
+          final retryHeaders = <String, String>{
+            ...headers ?? {},
+            'Authorization': 'Bearer ${AuthService.instance.accessToken}',
+          };
+          return await http.delete(url, headers: retryHeaders).timeout(timeout);
         }
       }
       return response;

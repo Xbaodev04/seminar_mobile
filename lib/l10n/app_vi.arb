@@ -1,7 +1,7 @@
 {
   "@@locale": "vi",
-  "appTitle": "Street Food Go",
-  "menuTitle": "Street Food Go — Menu",
+  "appTitle": "Culinary Tourism",
+  "menuTitle": "Culinary Tourism — Menu",
   "mapTitle": "Bản đồ",
   "poiListTitle": "Danh sách POI",
   "settingsTitle": "Cài đặt",
@@ -73,18 +73,15 @@
   "loggedOutMsg": "Đã đăng xuất",
   "backToLogin": "Quay lại đăng nhập",
   "forgotPassword": "Quên mật khẩu",
-
   "buyPackageTitle": "Mua gói",
   "noActivePackageMsg": "Bạn chưa đăng ký gói. Vui lòng mua gói để tiếp tục.",
   "buyNowToast": "Chức năng mua sẽ được triển khai",
   "buyNowButton": "Mua ngay",
   "skipPurchase": "Bỏ qua (dùng thử)",
-
   "forgotPasswordDesc": "Nhập email để nhận mã đặt lại.",
   "resetSentMsg": "Mã đặt lại mật khẩu đã được gửi tới email",
   "sendResetButton": "Gửi",
   "resetSuccessMsg": "Đặt lại mật khẩu thành công",
-
   "resendOtpText": "Gửi lại mã",
   "resetPasswordTitle": "Đặt lại mật khẩu",
   "resetPasswordDesc": "Nhập mã đã gửi đến email của bạn và chọn mật khẩu mới",
@@ -92,18 +89,15 @@
   "otpLabel": "Mã OTP",
   "newPasswordLabel": "Mật khẩu mới",
   "resetButton": "Đặt lại",
-
   "emailVerificationTitle": "Xác thực email",
   "emailVerificationDesc": "Nhập mã OTP đã gửi tới email của bạn",
   "verifyButtonText": "Xác thực",
   "backToRegister": "Trở lại đăng ký",
-
   "bottom_home": "Trang chủ",
   "bottom_notifications": "Thông báo",
   "bottom_profile": "Hồ sơ",
   "bottom_calendar": "Lịch",
   "bottom_settings": "Cài đặt",
-
   "searchPoiHint": "Tìm quán, địa điểm...",
   "ownerLabel": "Chủ quán:",
   "descriptionTitle": "Mô tả",
@@ -130,28 +124,38 @@
   "loginWithDevice": "Đăng nhập bằng thiết bị",
   "loadPoiError": "Tải POI thất bại: {error}",
   "@loadPoiError": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "audioQueue": "Hàng đợi âm thanh: {queueInfo}",
   "@audioQueue": {
-    "placeholders": {"queueInfo": {}}
+    "placeholders": {
+      "queueInfo": {}
+    }
   },
   "alreadyListenedRecently": "Bạn đã nghe {count} quán này gần đây rồi, vui lòng thử lại sau 2 phút.",
   "@alreadyListenedRecently": {
-    "placeholders": {"count": {}}
+    "placeholders": {
+      "count": {}
+    }
   },
   "pointNotInPoiZone": "Điểm đã chọn không ở vùng POI nào",
   "audioQueueFinished": "Đã phát xong hàng đợi âm thanh",
   "nowPlaying": "Đang phát: {poiName}",
   "@nowPlaying": {
-    "placeholders": {"poiName": {}}
+    "placeholders": {
+      "poiName": {}
+    }
   },
   "pleaseLoginFirst": "Vui lòng đăng nhập trước",
   "scanQrCode": "Quét mã QR",
   "stallNotFound": "Không tìm thấy quán",
   "error": "Lỗi: {error}",
   "@error": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "enableLocationTitle": "Bật dịch vụ vị trí",
   "enableLocationDesc": "Vui lòng bật vị trí để xem quán gần đây",
@@ -174,5 +178,9 @@
   "surveySubmit": "Gửi",
   "surveyThankYou": "Cảm ơn bạn đã góp ý!",
   "genericError": "Đã có lỗi xảy ra.",
-  "selectPoiTitle": "Chọn quán"
-}     
+  "selectPoiTitle": "Chọn quán",
+  "analyticsConsentTitle": "Chia sẻ thống kê nghe thuyết minh",
+  "analyticsConsentDescription": "Cho phép ghi nhận ẩn danh lượt phát, ngôn ngữ và thời lượng nghe để chủ quán cải thiện thuyết minh. Không gửi tên, email hay vị trí của bạn. Bạn có thể thay đổi lựa chọn trong Hồ sơ.",
+  "analyticsConsentAllow": "Cho phép",
+  "analyticsConsentDecline": "Không chia sẻ"
+}

@@ -1,17 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:seminar_mobile/core/services/auth_service.dart';
 import 'package:seminar_mobile/core/services/locale_provider.dart';
+import 'core/services/visitor_analytics.dart';
 import 'package:seminar_mobile/core/theme/grap_theme.dart';
 import 'package:seminar_mobile/l10n/app_localizations.dart';
-import 'presentation/pages/listening_history_page.dart';
-import 'presentation/pages/qr_scan_page.dart';
 
 import 'presentation/pages/change_password_page.dart';
 import 'presentation/pages/forgot_password_page.dart';
 import 'presentation/pages/home_page.dart';
+import 'presentation/pages/language_selection_page.dart';
+import 'presentation/pages/listening_history_page.dart';
 import 'presentation/pages/login_page.dart';
 import 'presentation/pages/profile_page.dart';
+import 'presentation/pages/qr_scan_page.dart';
 import 'presentation/pages/register_page.dart';
 import 'presentation/pages/splash_page.dart';
 import 'presentation/pages/update_profile_page.dart';
@@ -24,20 +28,20 @@ void main() async {
     FlutterError.presentError(details);
   };
 
+  // TẢI SONG SONG (PARALLEL LOAD) CÁC DỊCH VỤ CẦN THIẾT
   try {
-    await LocaleProvider.instance.init();
+    await Future.wait([
+      LocaleProvider.instance.init(),
+      AuthService.instance.init(),
+      VisitorAnalytics.instance.init(),
+    ]);
   } catch (e) {
-    debugPrint('Error initializing LocaleProvider: $e');
+    debugPrint('Error during Parallel Load: $e');
   }
 
+  // Kết nối socket sau khi Auth đã load xong token
   try {
-    await AuthService.instance.init();
-  } catch (e) {
-    debugPrint('Error initializing AuthService: $e');
-  }
-
-  try {
-    await AuthService.instance.connectToAppOnlineStatus();
+    unawaited(AuthService.instance.connectToAppOnlineStatus());
   } catch (e) {
     debugPrint('Error connecting online status: $e');
   }
@@ -79,23 +83,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App is in foreground - ensure WebSocket is connected
         debugPrint('✓ App resumed - ensuring online status is active');
-        if (authService.onlineStatusService?.isConnected == false) {
-          try {
-            authService.connectToAppOnlineStatus();
-          } catch (_) {}
-        }
+        unawaited(authService.setAppActive(true));
+        unawaited(VisitorAnalytics.instance.flush());
         break;
 
       case AppLifecycleState.paused:
-        debugPrint('⏸ App paused - keeping online status active');
+        unawaited(authService.setAppActive(false));
+        unawaited(VisitorAnalytics.instance.flush());
         break;
 
       case AppLifecycleState.detached:
-        debugPrint('✗ App detached');
+        unawaited(authService.setAppActive(false));
         break;
 
       case AppLifecycleState.hidden:
-        debugPrint('🔽 App hidden');
+        unawaited(authService.setAppActive(false));
         break;
 
       case AppLifecycleState.inactive:
@@ -122,6 +124,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       initialRoute: '/splash',
       routes: {
         '/splash': (ctx) => const SplashPage(),
+        '/language_selection': (ctx) => const LanguageSelectionPage(),
         '/home': (ctx) => const HomePage(),
         '/login': (ctx) => const LoginPage(),
         '/register': (ctx) => const RegisterPage(),

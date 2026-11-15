@@ -6,19 +6,39 @@ import '../../core/services/geo_audio_manager.dart';
 import '../../core/utils/cooldown.dart';
 import '../../data/models/poi.dart';
 import '../../data/remote/poi_api.dart';
+import '../../data/remote/poi_access.dart';
 import 'poi_detail_page.dart';
 
 class QrScanPage extends StatefulWidget {
-  const QrScanPage({super.key});
+  const QrScanPage({
+    super.key,
+    this.controller,
+    this.scannerBuilder,
+    this.lookupPoi,
+  });
+
+  @visibleForTesting
+  final MobileScannerController? controller;
+  @visibleForTesting
+  final Widget Function(void Function(BarcodeCapture) onDetect)? scannerBuilder;
+  @visibleForTesting
+  final Future<Map<String, dynamic>?> Function(String poiId)? lookupPoi;
 
   @override
   State<QrScanPage> createState() => _QrScanPageState();
 }
 
 class _QrScanPageState extends State<QrScanPage> {
-  final MobileScannerController _controller = MobileScannerController();
+  late final MobileScannerController _controller;
   final Cooldown _cooldown = Cooldown(duration: const Duration(seconds: 2));
   bool _isProcessing = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller ?? MobileScannerController();
+  }
 
   @override
   void dispose() {
@@ -38,7 +58,10 @@ class _QrScanPageState extends State<QrScanPage> {
         final segments = uri.pathSegments;
         for (int i = 0; i < segments.length; i++) {
           final seg = segments[i].toLowerCase();
-          if ((seg == 'pois' || seg == 'stalls' || seg == 'poi' || seg == 'stall') &&
+          if ((seg == 'pois' ||
+                  seg == 'stalls' ||
+                  seg == 'poi' ||
+                  seg == 'stall') &&
               i + 1 < segments.length) {
             final id = segments[i + 1];
             if (id.isNotEmpty) return id;
@@ -46,7 +69,8 @@ class _QrScanPageState extends State<QrScanPage> {
         }
 
         // Kiểm tra query parameter
-        final queryId = uri.queryParameters['poi'] ??
+        final queryId =
+            uri.queryParameters['poi'] ??
             uri.queryParameters['poi_id'] ??
             uri.queryParameters['stall'] ??
             uri.queryParameters['stall_id'] ??
@@ -62,7 +86,8 @@ class _QrScanPageState extends State<QrScanPage> {
       try {
         final decoded = jsonDecode(trimmed);
         if (decoded is Map) {
-          final id = decoded['poi_id'] ??
+          final id =
+              decoded['poi_id'] ??
               decoded['stall_id'] ??
               decoded['poiId'] ??
               decoded['id'];
@@ -74,7 +99,9 @@ class _QrScanPageState extends State<QrScanPage> {
     }
 
     // 3. Fallback: ID chuỗi ký tự đơn giản (không chứa dấu cách, không phải URL lạ)
-    if (!trimmed.contains(' ') && !trimmed.contains('\n') && trimmed.length <= 64) {
+    if (!trimmed.contains(' ') &&
+        !trimmed.contains('\n') &&
+        trimmed.length <= 64) {
       return trimmed;
     }
 
@@ -105,16 +132,23 @@ class _QrScanPageState extends State<QrScanPage> {
       return;
     }
 
-    setState(() => _isProcessing = true);
-    await _controller.stop();
+    _isProcessing = true;
+    setState(() => _isLoading = true);
 
     try {
-      final token = AuthService.instance.accessToken ?? '';
-      final data = await PoiApi.instance.getPoi(poiId, token);
+      await _controller.stop();
+      final data =
+          await (widget.lookupPoi?.call(poiId) ??
+              PoiApi.instance.getPoi(
+                poiId,
+                AuthService.instance.accessToken ?? '',
+              ));
+      if (!mounted) return;
 
       if (data == null) {
         throw Exception('Không tìm thấy thông tin địa điểm này trên hệ thống.');
       }
+      requirePublicPoi(data);
 
       final poi = Poi.fromJson(data);
 
@@ -127,13 +161,12 @@ class _QrScanPageState extends State<QrScanPage> {
 
       // Chuyển hướng sang trang chi tiết quán
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => PoiDetailPage(poi: poi),
-        ),
+        MaterialPageRoute(builder: (_) => PoiDetailPage(poi: poi)),
       );
     } catch (e) {
       if (!mounted) return;
-      showDialog(
+      setState(() => _isLoading = false);
+      await showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
@@ -159,7 +192,8 @@ class _QrScanPageState extends State<QrScanPage> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(ctx).pop();
-                setState(() => _isProcessing = false);
+                if (!mounted) return;
+                _isProcessing = false;
                 await _controller.start();
               },
               child: const Text('Quét lại'),
@@ -200,10 +234,8 @@ class _QrScanPageState extends State<QrScanPage> {
         fit: StackFit.expand,
         children: [
           // 1. Camera View Scanner
-          MobileScanner(
-            controller: _controller,
-            onDetect: _onDetect,
-          ),
+          widget.scannerBuilder?.call(_onDetect) ??
+              MobileScanner(controller: _controller, onDetect: _onDetect),
 
           // 2. Viewfinder Overlay (Khung ngắm quét)
           Center(
@@ -248,7 +280,7 @@ class _QrScanPageState extends State<QrScanPage> {
           ),
 
           // 4. Loading Overlay khi đang fetch dữ liệu
-          if (_isProcessing)
+          if (_isLoading)
             Container(
               color: Colors.black.withValues(alpha: 0.6),
               child: const Center(
@@ -270,4 +302,3 @@ class _QrScanPageState extends State<QrScanPage> {
     );
   }
 }
-

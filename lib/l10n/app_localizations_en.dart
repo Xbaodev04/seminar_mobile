@@ -9,10 +9,10 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Street Food Go';
+  String get appTitle => 'Culinary Tourism';
 
   @override
-  String get menuTitle => 'Street Food Go — Menu';
+  String get menuTitle => 'Culinary Tourism — Menu';
 
   @override
   String get mapTitle => 'Map';
@@ -440,4 +440,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectPoiTitle => 'Select a stall';
+
+  @override
+  String get analyticsConsentTitle => 'Share narration listening statistics';
+
+  @override
+  String get analyticsConsentDescription => 'Allow anonymous playback counts, language and listening time to help restaurants improve their narration. Your name, email and location are not sent. You can change this choice in Profile.';
+
+  @override
+  String get analyticsConsentAllow => 'Allow';
+
+  @override
+  String get analyticsConsentDecline => 'Do not share';
 }

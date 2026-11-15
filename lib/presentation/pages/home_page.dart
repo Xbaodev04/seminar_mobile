@@ -10,12 +10,14 @@ import '../../core/services/location_service.dart';
 import '../../core/services/route_service.dart';
 import '../../data/models/poi.dart';
 import '../../data/remote/poi_api.dart';
+import '../../engines/geofence_engine.dart';
 import '../../features/map/map_controller.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/home_loading_overlay.dart';
 import '../widgets/home_map_view.dart';
 import '../widgets/home_poi_list_view.dart';
 import '../widgets/home_search_bar.dart';
+import '../widgets/analytics_consent.dart';
 import '../widgets/mini_player_widget.dart';
 import '../widgets/nearby_contents_sheet.dart';
 import '../widgets/poi_quick_view_sheet.dart';
@@ -71,10 +73,15 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _initLocationAndPois();
+    GeofenceEngine.instance.start();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(promptAnalyticsConsent(context));
+    });
   }
 
   @override
   void dispose() {
+    GeofenceEngine.instance.stop();
     _debounceTimer?.cancel();
     _positionStreamSub?.cancel();
     _searchController.dispose();
@@ -156,6 +163,7 @@ class _HomePageState extends State<HomePage> {
           _pois = fetchedPois; // Chỉ dùng dữ liệu thật từ Backend
           _isLoadingPois = false;
         });
+        GeofenceEngine.instance.updatePois(_pois);
       }
     } catch (e) {
       if (mounted) {
@@ -164,6 +172,7 @@ class _HomePageState extends State<HomePage> {
           _pois = [];
           _isLoadingPois = false;
         });
+        GeofenceEngine.instance.updatePois([]);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Không thể kết nối đến máy chủ: $e'),
@@ -385,16 +394,9 @@ class _HomePageState extends State<HomePage> {
     );
 
     // Tạo dummy POI để làm meta (nếu GeoAudioManager bắt buộc dùng)
-    final firstPoiName =
-        (nearbyContents.first['stall_name'] ??
-                nearbyContents.first['poi_name'] ??
-                'Khu vực lân cận')
-            .toString();
-    final firstPoiId =
-        (nearbyContents.first['poi_id'] ??
-                nearbyContents.first['stall_id'] ??
-                'nearby')
-            .toString();
+    // Đặt tên tường minh để Mini Player nhận diện mở lại Playlist
+    final firstPoiName = 'Khu vực lân cận';
+    final firstPoiId = 'nearby_playlist';
 
     final dummyPoi = Poi(
       id: firstPoiId,
@@ -434,7 +436,7 @@ class _HomePageState extends State<HomePage> {
             Icon(Icons.map, color: Colors.orange),
             SizedBox(width: 8),
             Text(
-              'Street Food Go',
+              'Culinary Tourism',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
@@ -547,10 +549,25 @@ class _HomePageState extends State<HomePage> {
             onTap: () {
               final poi = GeoAudioManager.instance.currentPoi;
               if (poi != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => PoiDetailPage(poi: poi)),
-                );
+                final currentContents =
+                    GeoAudioManager.instance.currentContents;
+
+                // Nếu POI đang phát có ID là nearby_playlist thì chắc chắn là danh sách lân cận
+                if (poi.id == 'nearby_playlist') {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) =>
+                        NearbyContentsSheet(contents: currentContents),
+                  );
+                } else {
+                  // Mở giao diện chi tiết quán như bình thường
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => PoiDetailPage(poi: poi)),
+                  );
+                }
               }
             },
           ),

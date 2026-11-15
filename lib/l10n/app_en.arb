@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
-  "appTitle": "Street Food Go",
-  "menuTitle": "Street Food Go — Menu",
+  "appTitle": "Culinary Tourism",
+  "menuTitle": "Culinary Tourism — Menu",
   "mapTitle": "Map",
   "poiListTitle": "POI list",
   "settingsTitle": "Settings",
@@ -68,18 +68,15 @@
   "loggedOutMsg": "Signed out",
   "backToLogin": "Back to login",
   "forgotPassword": "Forgot password",
-
   "buyPackageTitle": "Buy package",
   "noActivePackageMsg": "You don't have an active package. Please purchase a package to continue.",
   "buyNowToast": "Purchase flow will be implemented soon",
   "buyNowButton": "Buy now",
   "skipPurchase": "Skip (trial)",
-
   "forgotPasswordDesc": "Enter your email to receive a reset code.",
   "resetSentMsg": "Password reset email sent",
   "sendResetButton": "Send",
   "resetSuccessMsg": "Password reset successful",
-
   "resendOtpText": "Resend",
   "resetPasswordTitle": "Reset password",
   "resetPasswordDesc": "Enter the code sent to your email and choose a new password",
@@ -87,18 +84,15 @@
   "otpLabel": "OTP",
   "newPasswordLabel": "New password",
   "resetButton": "Reset",
-
   "emailVerificationTitle": "Email verification",
   "emailVerificationDesc": "Enter the code sent to your email",
   "verifyButtonText": "Verify",
   "backToRegister": "Back to register",
-
   "bottom_home": "Home",
   "bottom_notifications": "Notifications",
   "bottom_profile": "Profile",
   "bottom_calendar": "Calendar",
   "bottom_settings": "Settings",
-
   "searchPoiHint": "Search stalls, locations...",
   "ownerLabel": "Owner:",
   "descriptionTitle": "Description",
@@ -125,28 +119,38 @@
   "loginWithDevice": "Sign in with Device",
   "loadPoiError": "Failed to load POI: {error}",
   "@loadPoiError": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "audioQueue": "Audio queue: {queueInfo}",
   "@audioQueue": {
-    "placeholders": {"queueInfo": {}}
+    "placeholders": {
+      "queueInfo": {}
+    }
   },
   "alreadyListenedRecently": "You've already listened to {count} stall(s) recently, please try again in 2 minutes.",
   "@alreadyListenedRecently": {
-    "placeholders": {"count": {}}
+    "placeholders": {
+      "count": {}
+    }
   },
   "pointNotInPoiZone": "Selected point is not in any POI zone",
   "audioQueueFinished": "Audio queue finished",
   "nowPlaying": "Now playing: {poiName}",
   "@nowPlaying": {
-    "placeholders": {"poiName": {}}
+    "placeholders": {
+      "poiName": {}
+    }
   },
   "pleaseLoginFirst": "Please login first",
   "scanQrCode": "Scan QR code",
   "stallNotFound": "Stall not found",
   "error": "Error: {error}",
   "@error": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "enableLocationTitle": "Enable location services",
   "enableLocationDesc": "Please enable location to see nearby stalls",
@@ -169,5 +173,9 @@
   "surveySubmit": "Submit",
   "surveyThankYou": "Thank you for your feedback!",
   "genericError": "An error occurred.",
-  "selectPoiTitle": "Select a stall"
-}    
+  "selectPoiTitle": "Select a stall",
+  "analyticsConsentTitle": "Share narration listening statistics",
+  "analyticsConsentDescription": "Allow anonymous playback counts, language and listening time to help restaurants improve their narration. Your name, email and location are not sent. You can change this choice in Profile.",
+  "analyticsConsentAllow": "Allow",
+  "analyticsConsentDecline": "Do not share"
+}

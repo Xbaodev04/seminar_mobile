@@ -1,7 +1,7 @@
 {
   "@@locale": "ko",
-  "appTitle": "Street Food Go",
-  "menuTitle": "Street Food Go — 메뉴",
+  "appTitle": "Culinary Tourism",
+  "menuTitle": "Culinary Tourism — 메뉴",
   "mapTitle": "지도",
   "poiListTitle": "POI 목록",
   "settingsTitle": "설정",
@@ -73,18 +73,15 @@
   "loggedOutMsg": "로그아웃되었습니다",
   "backToLogin": "로그인으로 돌아가기",
   "forgotPassword": "비밀번호를 잊으셨나요?",
-
   "buyPackageTitle": "패키지 구매",
   "noActivePackageMsg": "활성 패키지가 없습니다. 계속하려면 패키지를 구매하세요.",
   "buyNowToast": "구매 기능은 곧 구현됩니다",
   "buyNowButton": "지금 구매",
   "skipPurchase": "건너뛰기 (체험)",
-
   "forgotPasswordDesc": "리셋 코드를 받으려면 이메일을 입력하세요.",
   "resetSentMsg": "비밀번호 재설정 이메일이 전송되었습니다",
   "sendResetButton": "전송",
   "resetSuccessMsg": "비밀번호 재설정 성공",
-
   "resendOtpText": "재전송",
   "resetPasswordTitle": "비밀번호 재설정",
   "resetPasswordDesc": "이메일로 전송된 코드를 입력하고 새 비밀번호를 선택하세요",
@@ -92,18 +89,15 @@
   "otpLabel": "OTP",
   "newPasswordLabel": "새 비밀번호",
   "resetButton": "재설정",
-
   "emailVerificationTitle": "이메일 인증",
   "emailVerificationDesc": "이메일로 전송된 코드를 입력하세요",
   "verifyButtonText": "인증",
   "backToRegister": "등록으로 돌아가기",
-
   "bottom_home": "홈",
   "bottom_notifications": "알림",
   "bottom_profile": "프로필",
   "bottom_calendar": "달력",
   "bottom_settings": "설정",
-
   "searchPoiHint": "노점상, 장소 검색...",
   "ownerLabel": "사장:",
   "descriptionTitle": "설명",
@@ -130,24 +124,32 @@
   "loginWithDevice": "기기로 로그인",
   "loadPoiError": "POI 불러오기 실패: {error}",
   "@loadPoiError": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "audioQueue": "오디오 큐: {queueInfo}",
   "@audioQueue": {
-    "placeholders": {"queueInfo": {}}
+    "placeholders": {
+      "queueInfo": {}
+    }
   },
   "pointNotInPoiZone": "선택한 지점이 POI 영역에 없습니다",
   "audioQueueFinished": "오디오 큐 재생 완료",
   "nowPlaying": "재생 중: {poiName}",
   "@nowPlaying": {
-    "placeholders": {"poiName": {}}
+    "placeholders": {
+      "poiName": {}
+    }
   },
   "pleaseLoginFirst": "먼저 로그인해주세요",
   "scanQrCode": "QR 코드 스캔",
   "stallNotFound": "가게를 찾을 수 없습니다",
   "error": "오류: {error}",
   "@error": {
-    "placeholders": {"error": {}}
+    "placeholders": {
+      "error": {}
+    }
   },
   "enableLocationTitle": "위치 서비스 활성화",
   "enableLocationDesc": "근처 가게를 보려면 위치를 활성화하세요",
@@ -171,5 +173,9 @@
   "surveySubmit": "제출",
   "surveyThankYou": "피드백 감사합니다!",
   "genericError": "오류가 발생했습니다.",
-  "selectPoiTitle": "가게 선택"
-}     
+  "selectPoiTitle": "가게 선택",
+  "analyticsConsentTitle": "오디오 가이드 청취 통계 공유",
+  "analyticsConsentDescription": "가게의 오디오 가이드 개선을 위해 재생 횟수, 언어, 청취 시간을 익명으로 공유합니다. 이름, 이메일, 위치는 전송하지 않습니다. 프로필에서 변경할 수 있습니다.",
+  "analyticsConsentAllow": "허용",
+  "analyticsConsentDecline": "공유 안 함"
+}

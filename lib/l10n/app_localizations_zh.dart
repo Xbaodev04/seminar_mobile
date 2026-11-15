@@ -9,10 +9,10 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'Street Food Go';
+  String get appTitle => 'Culinary Tourism';
 
   @override
-  String get menuTitle => 'Street Food Go — 菜单';
+  String get menuTitle => 'Culinary Tourism — 菜单';
 
   @override
   String get mapTitle => '地图';
@@ -440,4 +440,16 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get selectPoiTitle => '选择摊位';
+
+  @override
+  String get analyticsConsentTitle => '分享语音讲解收听统计';
+
+  @override
+  String get analyticsConsentDescription => '允许匿名记录播放次数、语言和收听时长，帮助商家改进讲解。不发送您的姓名、邮箱或位置。您可以在个人资料中更改选择。';
+
+  @override
+  String get analyticsConsentAllow => '允许';
+
+  @override
+  String get analyticsConsentDecline => '不分享';
 }

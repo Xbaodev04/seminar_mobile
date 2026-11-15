@@ -14,6 +14,7 @@ class Poi {
   final double? averageRating;
   final int? totalReviews;
   final int? radius;
+  final int? audioPriority;
   final String? languageCode;
 
   const Poi({
@@ -32,6 +33,7 @@ class Poi {
     this.averageRating,
     this.totalReviews,
     this.radius,
+    this.audioPriority,
     this.languageCode,
   });
 
@@ -96,6 +98,9 @@ class Poi {
       radius: json['radius'] is int
           ? json['radius'] as int
           : int.tryParse(json['radius']?.toString() ?? ''),
+      audioPriority: json['audio_priority'] is int
+          ? json['audio_priority'] as int
+          : int.tryParse(json['audio_priority']?.toString() ?? ''),
       languageCode: json['language_code']?.toString(),
     );
   }
@@ -129,6 +134,7 @@ class Poi {
     'average_rating': averageRating,
     'total_reviews': totalReviews,
     'radius': radius,
+    'audio_priority': audioPriority,
     'language_code': languageCode,
   };
 }

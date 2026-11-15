@@ -1,13 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:crypto/crypto.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:seminar_mobile/core/services/online_status_service.dart';
 import 'package:seminar_mobile/data/remote/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../data/remote/auth_response.dart';
+import 'installation_identity.dart';
 
 class UserProfile {
   final String id;
@@ -37,8 +39,12 @@ class AuthService extends ChangeNotifier {
   static const _kUserKey = 'auth_user';
   static const _kAccessTokenKey = 'auth_access_token';
   static const _kRefreshTokenKey = 'auth_refresh_token';
-  static const _kDeviceIdKey = 'auth_device_id';
-  static const _kApiBaseUrl = 'http://10.0.2.2:8000';
+  static const _googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue:
+        '272475900321-l35p89k13uognv3vepb079jggk296p10.apps.googleusercontent.com',
+  );
+  Future<void>? _googleInitialization;
 
   UserProfile? _user;
   UserProfile? get user => _user;
@@ -46,9 +52,10 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _user != null;
 
   late SharedPreferences _prefs;
-  late String _deviceId;
+  String _deviceId = '';
   String get deviceId => _deviceId;
   OnlineStatusService? _onlineStatusService;
+  bool _appActive = true;
 
   OnlineStatusService? get onlineStatusService => _onlineStatusService;
   bool get isOnlineConnected => _onlineStatusService?.isConnected ?? false;
@@ -58,10 +65,7 @@ class AuthService extends ChangeNotifier {
     _prefs = await SharedPreferences.getInstance();
 
     // Get or create device ID
-    _deviceId = _prefs.getString(_kDeviceIdKey) ?? '';
-    if (_deviceId.isEmpty) {
-      await _initDeviceId();
-    }
+    await _initDeviceId();
 
     final s = _prefs.getString(_kUserKey);
     if (s != null) {
@@ -121,45 +125,45 @@ class AuthService extends ChangeNotifier {
 
   /// Initialize device ID on first run
   Future<void> _initDeviceId() async {
-    try {
-      final deviceInfoPlugin = DeviceInfoPlugin();
-      String deviceId;
+    _deviceId = await InstallationIdentity.loadOrCreate(_prefs);
+  }
 
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfoPlugin.androidInfo;
-        deviceId = androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfoPlugin.iosInfo;
-        deviceId = iosInfo.identifierForVendor ?? iosInfo.name;
-      } else {
-        deviceId = 'unknown_device';
-      }
+  Future<void> _ensureLocalIdentity() async {
+    _prefs = await SharedPreferences.getInstance();
+    if (_deviceId.isEmpty) await _initDeviceId();
+  }
 
-      _deviceId = deviceId;
-      await _prefs.setString(_kDeviceIdKey, deviceId);
-    } catch (e) {
-      print('Error initializing device ID: $e');
-      _deviceId = 'unknown_device';
-    }
+  Future<void> _completeRemoteSignIn(Map<String, dynamic> response) async {
+    final tokens = normalizeAuthTokens(response);
+    final access = tokens['accessToken'] as String;
+    final me = await ApiClient.instance.me(access);
+    final profile = _profileFromMe(me);
+    // Publish/store a session only after the authenticated profile is valid.
+    await _storeTokens(access, tokens['refreshToken'] as String);
+    _me = me;
+    _user = profile;
+    await _saveUserToPrefs();
+    _connectToOnlineStatus(userId: int.tryParse(profile.id));
+    notifyListeners();
   }
 
   /// Public method: Connect to online status WebSocket when app opens
   /// This counts as "app access" - called when app launches, before login
   Future<void> connectToAppOnlineStatus() async {
-    if (_deviceId.isEmpty) return;
+    if (_deviceId.isEmpty || !_appActive) return;
 
     // If already connected, skip
     if (_onlineStatusService?.isConnected ?? false) return;
 
     try {
       print('📱 Connecting to online status (app access)');
-      _onlineStatusService = OnlineStatusService(
-        baseUrl: _kApiBaseUrl,
-        deviceId: _deviceId,
-      );
-      _onlineStatusService!.addListener(() {
-        notifyListeners();
-      });
+      if (_onlineStatusService == null) {
+        _onlineStatusService = OnlineStatusService(
+          baseUrl: ApiClient.instance.baseUrl,
+          deviceId: _deviceId,
+        );
+        _onlineStatusService!.addListener(_onlineChanged);
+      }
       // Connect without user_id initially - counts as app access
       await _onlineStatusService!.connect(
         userId: isLoggedIn ? int.tryParse(user?.id ?? '') : null,
@@ -173,18 +177,16 @@ class AuthService extends ChangeNotifier {
 
   /// Private method: Connect to online status WebSocket (used during login)
   void _connectToOnlineStatus({int? userId}) {
-    if (_deviceId.isEmpty) return;
+    if (_deviceId.isEmpty || !_appActive) return;
 
     try {
       // If not already connected, create new service
       if (_onlineStatusService == null) {
         _onlineStatusService = OnlineStatusService(
-          baseUrl: _kApiBaseUrl,
+          baseUrl: ApiClient.instance.baseUrl,
           deviceId: _deviceId,
         );
-        _onlineStatusService!.addListener(() {
-          notifyListeners();
-        });
+        _onlineStatusService!.addListener(_onlineChanged);
       }
 
       // Update user_id if logging in
@@ -195,10 +197,22 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Disconnect from online status WebSocket
+  void _onlineChanged() => notifyListeners();
+
+  Future<void> setAppActive(bool active) async {
+    _appActive = active;
+    if (active) {
+      await connectToAppOnlineStatus();
+    } else {
+      await _onlineStatusService?.disconnect();
+    }
+  }
+
   Future<void> _disconnectFromOnlineStatus() async {
     if (_onlineStatusService != null) {
-      _onlineStatusService!.removeListener(() {});
+      _onlineStatusService!.removeListener(_onlineChanged);
       await _onlineStatusService!.disconnect();
+      _onlineStatusService!.dispose();
       _onlineStatusService = null;
     }
   }
@@ -414,17 +428,21 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> signInWithGoogle() async {
+    await _ensureLocalIdentity();
     try {
       debugPrint('[GoogleSignIn] Initializing with serverClientId...');
-      await GoogleSignIn.instance.initialize(
-        serverClientId:
-            '272475900321-l35p89k13uognv3vepb079jggk296p10.apps.googleusercontent.com',
-      );
+      _googleInitialization ??= GoogleSignIn.instance
+          .initialize(serverClientId: _googleServerClientId)
+          .catchError((Object error) {
+            _googleInitialization = null;
+            throw error;
+          });
+      await _googleInitialization;
       debugPrint('[GoogleSignIn] Authenticating...');
       final acc = await GoogleSignIn.instance.authenticate();
-      debugPrint('[GoogleSignIn] Account authenticated: ${acc.email}');
+      debugPrint('[GoogleSignIn] Account authenticated');
 
-      final auth = await acc.authentication;
+      final auth = acc.authentication;
       final idToken = auth.idToken;
       debugPrint(
         '[GoogleSignIn] ID Token: ${idToken != null ? "received (${idToken.length} chars)" : "null"}',
@@ -439,27 +457,7 @@ class AuthService extends ChangeNotifier {
       // Send to backend for authentication
       debugPrint('[GoogleSignIn] Sending ID token to backend...');
       final res = await ApiClient.instance.googleLogin(idToken: idToken);
-      final access = res['accessToken'] as String?;
-      final refresh = res['refreshToken'] as String?;
-
-      if (access == null || refresh == null) {
-        throw Exception(
-          'Đăng nhập Google thất bại: Không nhận được token từ server',
-        );
-      }
-
-      await _storeTokens(access, refresh);
-      final me = await ApiClient.instance.me(access);
-      _me = me;
-      _user = _profileFromMe(me);
-      await _saveUserToPrefs();
-      // Connect to online status
-      if (_deviceId.isNotEmpty) {
-        _connectToOnlineStatus(
-          userId: int.tryParse(me['id']?.toString() ?? ''),
-        );
-      }
-      notifyListeners();
+      await _completeRemoteSignIn(res);
       debugPrint('[GoogleSignIn] Google sign in SUCCESS!');
     } catch (e, stack) {
       debugPrint('[GoogleSignIn] ERROR: $e');
@@ -469,48 +467,9 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> signInWithDevice() async {
-    try {
-      final deviceInfoPlugin = DeviceInfoPlugin();
-      String deviceId;
-
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfoPlugin.androidInfo;
-        deviceId = androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfoPlugin.iosInfo;
-        deviceId = iosInfo.identifierForVendor ?? iosInfo.name;
-      } else {
-        throw Exception('Unsupported platform');
-      }
-
-      final res = await ApiClient.instance.loginDevice(deviceId: deviceId);
-      final access = res['accessToken'] as String?;
-      final refresh = res['refreshToken'] as String?;
-
-      if (access == null || refresh == null)
-        throw Exception('Device login failed: missing tokens');
-
-      await _storeTokens(access, refresh);
-      final me = await ApiClient.instance.me(access);
-      _me = me;
-      _user = _profileFromMe(me);
-      await _saveUserToPrefs();
-
-      // Store device ID
-      _deviceId = deviceId;
-      await _prefs.setString(_kDeviceIdKey, deviceId);
-
-      // Connect to online status
-      if (_deviceId.isNotEmpty) {
-        _connectToOnlineStatus(
-          userId: int.tryParse(me['id']?.toString() ?? ''),
-        );
-      }
-
-      notifyListeners();
-    } catch (e) {
-      rethrow;
-    }
+    await _ensureLocalIdentity();
+    final response = await ApiClient.instance.loginDevice(deviceId: _deviceId);
+    await _completeRemoteSignIn(response);
   }
 
   Future<void> signOut() async {
@@ -518,6 +477,7 @@ class AuthService extends ChangeNotifier {
     await _disconnectFromOnlineStatus();
 
     _user = null;
+    _me = null;
     await _prefs.remove(_kUserKey);
     await _prefs.remove(_kAccessTokenKey);
     await _prefs.remove(_kRefreshTokenKey);
@@ -525,6 +485,7 @@ class AuthService extends ChangeNotifier {
     try {
       await GoogleSignIn.instance.signOut();
     } catch (_) {}
+    if (_appActive) unawaited(connectToAppOnlineStatus());
     notifyListeners();
   }
 
@@ -539,21 +500,12 @@ class AuthService extends ChangeNotifier {
   }
 
   UserProfile _profileFromMe(Map<String, dynamic> me) {
-    // id may be at top-level or nested under 'user'
-    final id =
-        me['id']?.toString() ??
-        (me['user'] is Map ? (me['user']['id']?.toString()) : null) ??
-        'unknown';
-    final email =
-        me['email'] as String? ??
-        (me['user'] is Map ? me['user']['email'] as String? : null);
-    String? full_name = me['full_name'] as String?;
-    if (full_name == null && me['user'] is Map) {
-      full_name =
-          me['user']['username'] as String? ?? me['user']['email'] as String?;
-    }
-    full_name ??= me['username'] as String?;
-    return UserProfile(id: id, email: email, full_name: full_name);
+    final profile = normalizeAuthProfile(me);
+    return UserProfile(
+      id: profile['id'] as String,
+      email: profile['email'] as String?,
+      full_name: (profile['full_name'] ?? profile['username']) as String?,
+    );
   }
 
   String _sha256(String input) => sha256.convert(utf8.encode(input)).toString();

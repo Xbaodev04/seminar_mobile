@@ -9,7 +9,7 @@ class ApiClient {
   String baseUrl = const String.fromEnvironment(
     'SEMINAR_API_BASE',
     // defaultValue: 'http://10.0.2.2:8000/api/v1',
-    defaultValue: 'http://192.168.1.8:8000/api/v1',
+    defaultValue: 'http://172.20.10.6:8000/api/v1',
   );
 
   Future<Map<String, dynamic>> login({

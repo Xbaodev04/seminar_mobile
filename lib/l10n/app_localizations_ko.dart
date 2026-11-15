@@ -9,10 +9,10 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
-  String get appTitle => 'Street Food Go';
+  String get appTitle => 'Culinary Tourism';
 
   @override
-  String get menuTitle => 'Street Food Go — 메뉴';
+  String get menuTitle => 'Culinary Tourism — 메뉴';
 
   @override
   String get mapTitle => '지도';
@@ -440,4 +440,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get selectPoiTitle => '가게 선택';
+
+  @override
+  String get analyticsConsentTitle => '오디오 가이드 청취 통계 공유';
+
+  @override
+  String get analyticsConsentDescription => '가게의 오디오 가이드 개선을 위해 재생 횟수, 언어, 청취 시간을 익명으로 공유합니다. 이름, 이메일, 위치는 전송하지 않습니다. 프로필에서 변경할 수 있습니다.';
+
+  @override
+  String get analyticsConsentAllow => '허용';
+
+  @override
+  String get analyticsConsentDecline => '공유 안 함';
 }

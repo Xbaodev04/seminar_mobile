@@ -85,9 +85,8 @@ flutter:
   generate: true
 
   assets:
-    - lib/assets/imgs/background.png
-    - lib/assets/imgs/favicon.png
-    - lib/assets/imgs/logo.svg
+    - lib/assets/imgs/bg_food.jpg
+    - lib/assets/imgs/favicon.jpg
 
   fonts:
     - family: 'Noto Sans'
@@ -116,7 +115,7 @@ flutter:
 flutter_icons:
   android: true
   ios: true
-  image_path: "lib/assets/imgs/favicon.png"
+  image_path: "lib/assets/imgs/favicon.jpg"
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

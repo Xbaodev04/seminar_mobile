@@ -99,11 +99,19 @@ class MiniPlayerWidget extends StatelessWidget {
                     children: [
                       // Nút Phát / Tạm dừng
                       IconButton(
-                        icon: Icon(
-                          manager.isPlaying
-                              ? Icons.pause_circle_filled
-                              : Icons.play_circle_fill,
-                        ),
+                        icon: manager.isPreparing
+                            ? const SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(
+                                manager.isPlaying
+                                    ? Icons.pause_circle_filled
+                                    : Icons.play_circle_fill,
+                              ),
                         iconSize: 36,
                         color: Colors.orange,
                         onPressed: () => manager.togglePlay(),
