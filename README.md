@@ -2,6 +2,9 @@
 
 Ứng dụng di động viết bằng Flutter.
 
+Flutter Web hỗ trợ QR công khai `/poi/<id>`. Xem
+[hướng dẫn build, deploy Vercel và cấu hình QR](docs/flutter-web-qr.md).
+
 ## 📋 Mô tả ngắn
 Ứng dụng phục vụ demo chức năng của dự án (Street Food Go). File này hướng dẫn cách thiết lập môi trường và chạy source trên máy phát triển.
 

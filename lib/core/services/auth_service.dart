@@ -9,6 +9,7 @@ import 'package:seminar_mobile/data/remote/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/remote/auth_response.dart';
+import '../config/api_config.dart';
 import 'installation_identity.dart';
 
 class UserProfile {
@@ -61,7 +62,7 @@ class AuthService extends ChangeNotifier {
   bool get isOnlineConnected => _onlineStatusService?.isConnected ?? false;
   int get onlineCount => _onlineStatusService?.onlineCount ?? 0;
 
-  Future<void> init() async {
+  Future<void> init({bool restoreSession = true}) async {
     _prefs = await SharedPreferences.getInstance();
 
     // Get or create device ID
@@ -74,6 +75,8 @@ class AuthService extends ChangeNotifier {
         _user = UserProfile.fromJson(js);
       } catch (_) {}
     }
+    // Public QR pages must not wait for account/session requests before opening.
+    if (!restoreSession) return;
     if (kDebugMode) {
       await _ensureMockUsers();
     }
@@ -151,6 +154,8 @@ class AuthService extends ChangeNotifier {
   /// This counts as "app access" - called when app launches, before login
   Future<void> connectToAppOnlineStatus() async {
     if (_deviceId.isEmpty || !_appActive) return;
+    final socketBase = onlineStatusBaseUrl(ApiClient.instance.baseUrl);
+    if (socketBase == null) return;
 
     // If already connected, skip
     if (_onlineStatusService?.isConnected ?? false) return;
@@ -159,7 +164,7 @@ class AuthService extends ChangeNotifier {
       print('📱 Connecting to online status (app access)');
       if (_onlineStatusService == null) {
         _onlineStatusService = OnlineStatusService(
-          baseUrl: ApiClient.instance.baseUrl,
+          baseUrl: socketBase,
           deviceId: _deviceId,
         );
         _onlineStatusService!.addListener(_onlineChanged);
@@ -178,12 +183,14 @@ class AuthService extends ChangeNotifier {
   /// Private method: Connect to online status WebSocket (used during login)
   void _connectToOnlineStatus({int? userId}) {
     if (_deviceId.isEmpty || !_appActive) return;
+    final socketBase = onlineStatusBaseUrl(ApiClient.instance.baseUrl);
+    if (socketBase == null) return;
 
     try {
       // If not already connected, create new service
       if (_onlineStatusService == null) {
         _onlineStatusService = OnlineStatusService(
-          baseUrl: ApiClient.instance.baseUrl,
+          baseUrl: socketBase,
           deviceId: _deviceId,
         );
         _onlineStatusService!.addListener(_onlineChanged);

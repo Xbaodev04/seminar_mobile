@@ -12,8 +12,14 @@ import '../../engines/tts_engine.dart';
 class PoiDetailPage extends StatefulWidget {
   final Poi poi;
   final Position? userPosition;
+  final bool fromPublicLink;
 
-  const PoiDetailPage({super.key, required this.poi, this.userPosition});
+  const PoiDetailPage({
+    super.key,
+    required this.poi,
+    this.userPosition,
+    this.fromPublicLink = false,
+  });
 
   @override
   State<PoiDetailPage> createState() => _PoiDetailPageState();
@@ -54,7 +60,9 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
             (content['text_content'] ?? content['description'] ?? '')
                 .toString();
 
-        if (rawText.isNotEmpty && targetLang != 'en') {
+        if (!widget.fromPublicLink &&
+            rawText.isNotEmpty &&
+            targetLang != 'en') {
           final translatedTitle = await TtsEngine.instance.translateText(
             text: rawTitle,
             targetLang: targetLang,
@@ -274,25 +282,26 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
                               ),
                       ),
                       const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.pop(
-                            context,
-                            true,
-                          ); // Trả về true để HomePage vẽ đường
-                        },
-                        icon: const Icon(Icons.directions),
-                        label: const Text('Chỉ đường'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      if (!widget.fromPublicLink)
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(
+                              context,
+                              true,
+                            ); // Trả về true để HomePage vẽ đường
+                          },
+                          icon: const Icon(Icons.directions),
+                          label: const Text('Chỉ đường'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 16),

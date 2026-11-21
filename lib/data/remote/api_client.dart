@@ -1,16 +1,13 @@
 import 'auth_api.dart';
 import 'poi_api.dart';
+import '../../core/config/api_config.dart';
 
 class ApiClient {
   ApiClient._private();
   static final ApiClient instance = ApiClient._private();
 
   /// Set this to your running API address. For Android emulator use 10.0.2.2
-  String baseUrl = const String.fromEnvironment(
-    'SEMINAR_API_BASE',
-    // defaultValue: 'http://10.0.2.2:8000/api/v1',
-    defaultValue: 'http://172.20.10.6:8000/api/v1',
-  );
+  String baseUrl = defaultApiBaseUrl();
 
   Future<Map<String, dynamic>> login({
     required String email,

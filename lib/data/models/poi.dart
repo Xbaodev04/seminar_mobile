@@ -1,3 +1,6 @@
+import '../../core/config/api_config.dart';
+import '../remote/api_client.dart';
+
 class Poi {
   final String id;
   final String? ownerId;
@@ -106,16 +109,7 @@ class Poi {
   }
 
   static String? _buildFullImageUrl(String? coverImage) {
-    if (coverImage == null || coverImage.isEmpty) return null;
-
-    // If already absolute URL, return as is
-    if (coverImage.startsWith('http')) {
-      return coverImage;
-    }
-
-    // Otherwise prepend base URL
-    const String baseUrl = 'http://10.0.2.2:8000';
-    return '$baseUrl${coverImage.startsWith('/') ? coverImage : '/$coverImage'}';
+    return resolveMediaUrl(coverImage, ApiClient.instance.baseUrl);
   }
 
   Map<String, dynamic> toJson() => {

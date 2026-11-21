@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:seminar_mobile/core/services/auth_service.dart';
 import 'package:seminar_mobile/core/services/locale_provider.dart';
@@ -19,9 +21,12 @@ import 'presentation/pages/qr_scan_page.dart';
 import 'presentation/pages/register_page.dart';
 import 'presentation/pages/splash_page.dart';
 import 'presentation/pages/update_profile_page.dart';
+import 'presentation/pages/poi_link_page.dart';
+import 'core/navigation/poi_link.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
 
   // Xử lý lỗi
   FlutterError.onError = (details) {
@@ -32,7 +37,9 @@ void main() async {
   try {
     await Future.wait([
       LocaleProvider.instance.init(),
-      AuthService.instance.init(),
+      AuthService.instance.init(
+        restoreSession: !(kIsWeb && isPoiLocation(Uri.base.toString())),
+      ),
       VisitorAnalytics.instance.init(),
     ]);
   } catch (e) {
@@ -50,7 +57,8 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.initialLocation});
+  final String? initialLocation;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -121,7 +129,24 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       locale: LocaleProvider.instance.locale,
       debugShowCheckedModeBanner: false,
       theme: grapTheme(),
-      initialRoute: '/splash',
+      initialRoute:
+          widget.initialLocation ??
+          (kIsWeb ? _webInitialLocation() : '/splash'),
+      onGenerateInitialRoutes: (location) => [
+        MaterialPageRoute(
+          settings: RouteSettings(name: location),
+          builder: (_) => isPoiLocation(location)
+              ? PoiLinkPage(poiId: poiIdFromLocation(location))
+              : const SplashPage(),
+        ),
+      ],
+      onGenerateRoute: (settings) => isPoiLocation(settings.name ?? '')
+          ? MaterialPageRoute(
+              settings: settings,
+              builder: (_) =>
+                  PoiLinkPage(poiId: poiIdFromLocation(settings.name!)),
+            )
+          : null,
       routes: {
         '/splash': (ctx) => const SplashPage(),
         '/language_selection': (ctx) => const LanguageSelectionPage(),
@@ -136,5 +161,16 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/qr_scan': (ctx) => const QrScanPage(),
       },
     );
+  }
+
+  String _webInitialLocation() {
+    final uri = Uri.base;
+    final location = uri.fragment.startsWith('/')
+        ? uri.fragment
+        : Uri(
+            path: uri.path,
+            query: uri.hasQuery ? uri.query : null,
+          ).toString();
+    return isPoiLocation(location) ? location : '/splash';
   }
 }
