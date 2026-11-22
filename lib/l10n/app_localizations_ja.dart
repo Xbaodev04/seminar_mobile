@@ -442,10 +442,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get selectPoiTitle => '屋台を選択';
 
   @override
-  String get analyticsConsentTitle => '音声ガイドの利用統計を共有';
+  String get analyticsConsentTitle => 'アクセスと音声ガイドの統計を共有';
 
   @override
-  String get analyticsConsentDescription => '店舗の音声ガイド改善のため、再生回数、言語、視聴時間を匿名で共有します。名前、メール、位置情報は送信しません。プロフィールで変更できます。';
+  String get analyticsConsentDescription => '匿名のブラウザーIDで端末、訪問セッション、QRリンクの表示、店舗閲覧、音声ガイドの利用を集計します。氏名、メール、位置情報は送信しません。プロフィールで無効にできます。';
 
   @override
   String get analyticsConsentAllow => '許可';

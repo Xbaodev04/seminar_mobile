@@ -442,10 +442,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get selectPoiTitle => 'Select a stall';
 
   @override
-  String get analyticsConsentTitle => 'Share narration listening statistics';
+  String get analyticsConsentTitle => 'Share visit and narration statistics';
 
   @override
-  String get analyticsConsentDescription => 'Allow anonymous playback counts, language and listening time to help restaurants improve their narration. Your name, email and location are not sent. You can change this choice in Profile.';
+  String get analyticsConsentDescription => 'Allow an anonymous browser ID to count devices, visits, QR link opens, restaurant views and narration listening. Your name, email and location are not sent. You can turn this off in Profile.';
 
   @override
   String get analyticsConsentAllow => 'Allow';

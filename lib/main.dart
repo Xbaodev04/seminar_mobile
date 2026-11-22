@@ -53,6 +53,7 @@ void main() async {
     debugPrint('Error connecting online status: $e');
   }
 
+  unawaited(VisitorAnalytics.instance.startVisit());
   runApp(const MyApp());
 }
 
@@ -93,6 +94,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         debugPrint('✓ App resumed - ensuring online status is active');
         unawaited(authService.setAppActive(true));
         unawaited(VisitorAnalytics.instance.flush());
+        unawaited(VisitorAnalytics.instance.startVisit());
         break;
 
       case AppLifecycleState.paused:
@@ -117,6 +119,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      builder: (context, child) => Listener(
+        onPointerDown: (_) => VisitorAnalytics.instance.recordActivity(),
+        onPointerSignal: (_) => VisitorAnalytics.instance.recordActivity(),
+        child: child ?? const SizedBox.shrink(),
+      ),
       // Title is provided by localization
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       localizationsDelegates: [
@@ -136,15 +143,20 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         MaterialPageRoute(
           settings: RouteSettings(name: location),
           builder: (_) => isPoiLocation(location)
-              ? PoiLinkPage(poiId: poiIdFromLocation(location))
+              ? PoiLinkPage(
+                  poiId: poiIdFromLocation(location),
+                  fromQr: isQrLocation(location),
+                )
               : const SplashPage(),
         ),
       ],
       onGenerateRoute: (settings) => isPoiLocation(settings.name ?? '')
           ? MaterialPageRoute(
               settings: settings,
-              builder: (_) =>
-                  PoiLinkPage(poiId: poiIdFromLocation(settings.name!)),
+              builder: (_) => PoiLinkPage(
+                poiId: poiIdFromLocation(settings.name!),
+                fromQr: isQrLocation(settings.name!),
+              ),
             )
           : null,
       routes: {

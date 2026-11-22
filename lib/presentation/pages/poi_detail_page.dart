@@ -8,17 +8,21 @@ import '../../core/services/locale_provider.dart';
 import '../../core/services/location_service.dart';
 import '../../data/models/poi.dart';
 import '../../engines/tts_engine.dart';
+import '../../core/services/visitor_analytics.dart';
+import '../widgets/analytics_consent.dart';
 
 class PoiDetailPage extends StatefulWidget {
   final Poi poi;
   final Position? userPosition;
   final bool fromPublicLink;
+  final bool fromQr;
 
   const PoiDetailPage({
     super.key,
     required this.poi,
     this.userPosition,
     this.fromPublicLink = false,
+    this.fromQr = false,
   });
 
   @override
@@ -30,11 +34,35 @@ class _PoiDetailPageState extends State<PoiDetailPage> {
   Map<String, dynamic>? _fullDetails;
   List<Map<String, dynamic>> _contents = [];
   bool _isFavorite = false;
+  bool _viewRecorded = false;
 
   @override
   void initState() {
     super.initState();
     _loadAdditionalDetails();
+    VisitorAnalytics.instance.addListener(_recordView);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await promptAnalyticsConsent(context);
+      _recordView();
+    });
+  }
+
+  void _recordView() {
+    if (!mounted ||
+        _viewRecorded ||
+        !(ModalRoute.of(context)?.isCurrent ?? false) ||
+        !VisitorAnalytics.instance.enabled) {
+      return;
+    }
+    _viewRecorded = true;
+    VisitorAnalytics.instance.viewPoi(widget.poi.id, fromQr: widget.fromQr);
+  }
+
+  @override
+  void dispose() {
+    VisitorAnalytics.instance.removeListener(_recordView);
+    super.dispose();
   }
 
   /// Load extra stall info and audio narration contents from backend with auto translation

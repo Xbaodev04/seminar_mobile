@@ -442,10 +442,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get selectPoiTitle => 'Chọn quán';
 
   @override
-  String get analyticsConsentTitle => 'Chia sẻ thống kê nghe thuyết minh';
+  String get analyticsConsentTitle => 'Chia sẻ thống kê truy cập và thuyết minh';
 
   @override
-  String get analyticsConsentDescription => 'Cho phép ghi nhận ẩn danh lượt phát, ngôn ngữ và thời lượng nghe để chủ quán cải thiện thuyết minh. Không gửi tên, email hay vị trí của bạn. Bạn có thể thay đổi lựa chọn trong Hồ sơ.';
+  String get analyticsConsentDescription => 'Cho phép dùng mã trình duyệt ẩn danh để thống kê thiết bị, phiên truy cập, lượt mở từ QR, lượt xem quán và lượt nghe thuyết minh. Không gửi tên, email hay vị trí. Bạn có thể tắt trong Hồ sơ.';
 
   @override
   String get analyticsConsentAllow => 'Cho phép';

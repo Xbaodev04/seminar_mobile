@@ -161,7 +161,9 @@ class _QrScanPageState extends State<QrScanPage> {
 
       // Chuyển hướng sang trang chi tiết quán
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => PoiDetailPage(poi: poi)),
+        MaterialPageRoute(
+          builder: (_) => PoiDetailPage(poi: poi, fromQr: true),
+        ),
       );
     } catch (e) {
       if (!mounted) return;

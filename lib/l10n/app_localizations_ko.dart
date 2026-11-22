@@ -442,10 +442,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get selectPoiTitle => '가게 선택';
 
   @override
-  String get analyticsConsentTitle => '오디오 가이드 청취 통계 공유';
+  String get analyticsConsentTitle => '방문 및 오디오 가이드 통계 공유';
 
   @override
-  String get analyticsConsentDescription => '가게의 오디오 가이드 개선을 위해 재생 횟수, 언어, 청취 시간을 익명으로 공유합니다. 이름, 이메일, 위치는 전송하지 않습니다. 프로필에서 변경할 수 있습니다.';
+  String get analyticsConsentDescription => '익명 브라우저 ID로 기기, 방문 세션, QR 링크 열기, 가게 조회 및 오디오 가이드 이용을 집계합니다. 이름, 이메일, 위치는 전송하지 않습니다. 프로필에서 끌 수 있습니다.';
 
   @override
   String get analyticsConsentAllow => '허용';

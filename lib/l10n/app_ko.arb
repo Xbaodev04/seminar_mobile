@@ -174,8 +174,8 @@
   "surveyThankYou": "피드백 감사합니다!",
   "genericError": "오류가 발생했습니다.",
   "selectPoiTitle": "가게 선택",
-  "analyticsConsentTitle": "오디오 가이드 청취 통계 공유",
-  "analyticsConsentDescription": "가게의 오디오 가이드 개선을 위해 재생 횟수, 언어, 청취 시간을 익명으로 공유합니다. 이름, 이메일, 위치는 전송하지 않습니다. 프로필에서 변경할 수 있습니다.",
+  "analyticsConsentTitle": "방문 및 오디오 가이드 통계 공유",
+  "analyticsConsentDescription": "익명 브라우저 ID로 기기, 방문 세션, QR 링크 열기, 가게 조회 및 오디오 가이드 이용을 집계합니다. 이름, 이메일, 위치는 전송하지 않습니다. 프로필에서 끌 수 있습니다.",
   "analyticsConsentAllow": "허용",
   "analyticsConsentDecline": "공유 안 함"
 }

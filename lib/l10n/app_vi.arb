@@ -179,8 +179,8 @@
   "surveyThankYou": "Cảm ơn bạn đã góp ý!",
   "genericError": "Đã có lỗi xảy ra.",
   "selectPoiTitle": "Chọn quán",
-  "analyticsConsentTitle": "Chia sẻ thống kê nghe thuyết minh",
-  "analyticsConsentDescription": "Cho phép ghi nhận ẩn danh lượt phát, ngôn ngữ và thời lượng nghe để chủ quán cải thiện thuyết minh. Không gửi tên, email hay vị trí của bạn. Bạn có thể thay đổi lựa chọn trong Hồ sơ.",
+  "analyticsConsentTitle": "Chia sẻ thống kê truy cập và thuyết minh",
+  "analyticsConsentDescription": "Cho phép dùng mã trình duyệt ẩn danh để thống kê thiết bị, phiên truy cập, lượt mở từ QR, lượt xem quán và lượt nghe thuyết minh. Không gửi tên, email hay vị trí. Bạn có thể tắt trong Hồ sơ.",
   "analyticsConsentAllow": "Cho phép",
   "analyticsConsentDecline": "Không chia sẻ"
 }

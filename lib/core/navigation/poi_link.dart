@@ -1,5 +1,5 @@
-/// Canonical public QR URL: https://<visitor-domain>/poi/<id>.
-/// Also accepts existing /pois/<id> and ?poi=<id> links.
+/// Canonical public QR URL: `https://<visitor-domain>/poi/<id>`.
+/// Also accepts existing `/pois/<id>` and `?poi=<id>` links.
 String? poiIdFromLocation(String location) {
   try {
     final uri = Uri.parse(location);
@@ -18,6 +18,13 @@ String? poiIdFromLocation(String location) {
   } on FormatException {
     return null;
   }
+}
+
+bool isQrLocation(String location) {
+  final uri = Uri.tryParse(location);
+  if (uri == null) return false;
+  final path = uri.fragment.startsWith('/') ? Uri.tryParse(uri.fragment) : uri;
+  return path?.queryParameters['source'] == 'qr';
 }
 
 bool isPoiLocation(String location) {

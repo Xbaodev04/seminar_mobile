@@ -938,13 +938,13 @@ abstract class AppLocalizations {
   /// No description provided for @analyticsConsentTitle.
   ///
   /// In en, this message translates to:
-  /// **'Share narration listening statistics'**
+  /// **'Share visit and narration statistics'**
   String get analyticsConsentTitle;
 
   /// No description provided for @analyticsConsentDescription.
   ///
   /// In en, this message translates to:
-  /// **'Allow anonymous playback counts, language and listening time to help restaurants improve their narration. Your name, email and location are not sent. You can change this choice in Profile.'**
+  /// **'Allow an anonymous browser ID to count devices, visits, QR link opens, restaurant views and narration listening. Your name, email and location are not sent. You can turn this off in Profile.'**
   String get analyticsConsentDescription;
 
   /// No description provided for @analyticsConsentAllow.

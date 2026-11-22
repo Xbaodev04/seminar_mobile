@@ -12,9 +12,11 @@ class PoiLinkPage extends StatefulWidget {
     required this.poiId,
     this.lookupPoi,
     this.detailBuilder,
+    this.fromQr = false,
   });
 
   final String? poiId;
+  final bool fromQr;
   final Future<Map<String, dynamic>?> Function(String)? lookupPoi;
   final Widget Function(Poi)? detailBuilder;
 
@@ -49,7 +51,11 @@ class _PoiLinkPageState extends State<PoiLinkPage> {
           snapshot.hasData) {
         final poi = snapshot.data!;
         return widget.detailBuilder?.call(poi) ??
-            PoiDetailPage(poi: poi, fromPublicLink: true);
+            PoiDetailPage(
+              poi: poi,
+              fromPublicLink: true,
+              fromQr: widget.fromQr,
+            );
       }
       final loading = snapshot.connectionState != ConnectionState.done;
       final message = widget.poiId == null

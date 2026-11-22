@@ -442,10 +442,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get selectPoiTitle => '选择摊位';
 
   @override
-  String get analyticsConsentTitle => '分享语音讲解收听统计';
+  String get analyticsConsentTitle => '分享访问和语音讲解统计';
 
   @override
-  String get analyticsConsentDescription => '允许匿名记录播放次数、语言和收听时长，帮助商家改进讲解。不发送您的姓名、邮箱或位置。您可以在个人资料中更改选择。';
+  String get analyticsConsentDescription => '允许使用匿名浏览器标识统计设备、访问会话、二维码链接打开、商家浏览和讲解收听。不发送姓名、邮箱或位置。可在个人资料中关闭。';
 
   @override
   String get analyticsConsentAllow => '允许';

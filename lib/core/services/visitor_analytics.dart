@@ -19,19 +19,32 @@ String analyticsEventId() {
   return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
 }
 
-/// Anonymous playback events; consent and offline retries survive app restarts.
+/// Anonymous visits and playback; consent and offline retries survive restarts.
 class VisitorAnalytics extends ChangeNotifier {
   VisitorAnalytics({
     http.Client? client,
     String Function()? baseUrl,
+    DateTime Function()? now,
     this.retryInterval = const Duration(seconds: 30),
   }) : _client = client ?? http.Client(),
-       _baseUrl = baseUrl ?? (() => ApiClient.instance.baseUrl);
+       _baseUrl = baseUrl ?? (() => ApiClient.instance.baseUrl),
+       _now = now ?? DateTime.now;
   static final instance = VisitorAnalytics();
-  static const consentKey = 'visitor_analytics_consent_v1';
+  static const consentKey = 'visitor_analytics_consent_v2';
   static const queueKey = 'visitor_analytics_pending_v1';
+  static const deviceKey = 'visitor_analytics_device_v1';
+  static const sessionKey = 'visitor_analytics_session_v1';
+  static const activityKey = 'visitor_analytics_activity_v1';
+  static const sessionStartKey = 'visitor_analytics_session_start_v1';
+  static const sessionTimeout = Duration(minutes: 30);
   final http.Client _client;
   final String Function() _baseUrl;
+  final DateTime Function() _now;
+  bool _visitStarted = false;
+  String? _announcedSession;
+  String? _deviceId;
+  String? _sessionId;
+  DateTime? _lastTouch;
   final Duration retryInterval;
   SharedPreferences? _prefs;
   bool? _consent;
@@ -50,6 +63,11 @@ class VisitorAnalytics extends ChangeNotifier {
     if (_prefs != null) return;
     _prefs = preferences ?? await SharedPreferences.getInstance();
     _consent = _prefs!.getBool(consentKey);
+    // Keep existing declines; ask again before expanding beyond playback data.
+    if (_consent == null &&
+        _prefs!.getBool('visitor_analytics_consent_v1') == false) {
+      _consent = false;
+    }
     try {
       final saved = jsonDecode(_prefs!.getString(queueKey) ?? '[]');
       if (enabled && saved is List) {
@@ -72,7 +90,17 @@ class VisitorAnalytics extends ChangeNotifier {
     if (!await _prefs!.setBool(consentKey, enabled)) return;
     ++_consentGeneration;
     _consent = enabled;
-    if (!enabled) _pending.clear();
+    if (!enabled) {
+      _pending.clear();
+      _deviceId = null;
+      _sessionId = null;
+      _announcedSession = null;
+      for (final key in [deviceKey, sessionKey, activityKey, sessionStartKey]) {
+        await _prefs!.remove(key);
+      }
+    } else if (_visitStarted) {
+      _touchSession();
+    }
     await _persist();
     if (!_disposed) notifyListeners();
     if (enabled) unawaited(flush());
@@ -86,9 +114,75 @@ class VisitorAnalytics extends ChangeNotifier {
         ).hasMatch(event['poi_id']?.toString() ?? '')) {
       return;
     }
-    if (!const ['vi', 'en', 'zh', 'ja', 'ko'].contains(event['language'])) {
+    if (event['kind']?.toString().startsWith('audio_') == true &&
+        !const ['vi', 'en', 'zh', 'ja', 'ko'].contains(event['language'])) {
       return;
     }
+    if (_visitStarted) _touchSession();
+    _enqueue({
+      ...event,
+      if (_visitStarted) 'device_id': _deviceId,
+      if (_visitStarted) 'session_id': _sessionId,
+    });
+  }
+
+  /// Does not create an identity or send requests before consent.
+  Future<void> startVisit() async {
+    await init();
+    _visitStarted = true;
+    if (enabled && !_disposed) _touchSession();
+  }
+
+  void recordActivity() {
+    if (!_visitStarted || !enabled || _disposed) return;
+    final now = _now();
+    if (_lastTouch != null &&
+        now.difference(_lastTouch!) < const Duration(seconds: 10)) {
+      return;
+    }
+    _lastTouch = now;
+    _touchSession();
+  }
+
+  void _touchSession() {
+    final prefs = _prefs;
+    if (!enabled || prefs == null || _disposed) return;
+    final now = _now().toUtc();
+    _deviceId = prefs.getString(deviceKey) ?? analyticsEventId();
+    final last = DateTime.tryParse(prefs.getString(activityKey) ?? '');
+    _sessionId = prefs.getString(sessionKey);
+    if (_sessionId == null ||
+        last == null ||
+        now.difference(last) >= sessionTimeout ||
+        now.isBefore(last)) {
+      _sessionId = analyticsEventId();
+      unawaited(prefs.setString(sessionStartKey, now.toIso8601String()));
+    }
+    unawaited(prefs.setString(deviceKey, _deviceId!));
+    unawaited(prefs.setString(sessionKey, _sessionId!));
+    unawaited(prefs.setString(activityKey, now.toIso8601String()));
+    if (_announcedSession == _sessionId) return;
+    _announcedSession = _sessionId;
+    _enqueue({
+      'event_id': analyticsEventId(),
+      'kind': 'app_visited',
+      'occurred_at': prefs.getString(sessionStartKey) ?? now.toIso8601String(),
+      'device_id': _deviceId,
+      'session_id': _sessionId,
+    });
+  }
+
+  void viewPoi(String poiId, {bool fromQr = false}) {
+    record({
+      'event_id': analyticsEventId(),
+      'kind': 'poi_viewed',
+      'poi_id': poiId,
+      'source': fromQr ? 'qr' : 'direct',
+      'occurred_at': _now().toUtc().toIso8601String(),
+    });
+  }
+
+  void _enqueue(Map<String, dynamic> event) {
     _pending.add(Map.from(event));
     if (_pending.length > 500) _pending.removeAt(0);
     unawaited(_persist().then((_) => flush()).catchError((Object _) {}));
